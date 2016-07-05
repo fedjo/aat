@@ -1,0 +1,9 @@
+<h1>{{ form.title }}</h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="/thesis/upload/" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    <input type="file" name="video" />
+    <input type="submit" />
+</form>
