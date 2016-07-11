@@ -16,6 +16,8 @@ def upload_video(request):
         form = VideoForm(request.POST, request.FILES)
         if form.is_valid():
             video = Video(request.FILES['video'])
+            video.read_csv_file("")
+            video.initializeRecognizer()
             video.detectFaces()
             context = { 'boldmessage' :  video.printName() }
             return render(request, 'thesis/index.html', context)
