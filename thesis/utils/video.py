@@ -15,8 +15,8 @@ class Video:
         self.profiles = []
         #self.all_face_frames = []
         self.labels = []
-        self.face_cascade = cv2.CascadeClassifier('/home/yiorgos/Documents/opencvFaceRec/haarcascade_frontalface_default.xml')
-        self.profile_cascade = cv2.CascadeClassifier('/home/yiorgos/Documents/opencvFaceRec/haarcascade_profileface.xml')
+        self.face_cascade = cv2.CascadeClassifier('/home/yiorgos/thesis/haarcascade_frontalface_default.xml')
+        self.profile_cascade = cv2.CascadeClassifier('/home/yiorgos/thesis/haarcascade_profileface.xml')
 
 
     def printName(self):
@@ -77,9 +77,17 @@ class Video:
         cv2.destroyAllWindows()
 
 
-    def initializeRecognizer(self):
+    def LBPHRecognizer(self):
         self.recognizer = cv2.face.createLBPHFaceRecognizer()
         self.recognizer.train(self.faces_db, numpy.array(self.labels))
+
+    def fisherFaceRecognizer(self):
+	self.recognizer = cv2.face.createFisherFaceRecognizer()
+	self.recognizer.train(self.faces_db, numpy.array(self.labels))
+
+    def eigenFaceRecognizer(self):
+	self.recognizer = cv2.face.createEigenFaceRecognizer()
+	self.recognizer.train(self.faces_db, numpy.array(self.labels))
 
 
     def predictFaces(self, org_img, frames):
