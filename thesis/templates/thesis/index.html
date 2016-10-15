@@ -11,7 +11,14 @@
 
 <body>
 <h1>Take the oportunity to auto-tag your own video</h1>
-hello world! <strong>{{ boldmessage }}</strong><br />
+<strong>{{ boldmessage }}</strong><br />
+<h2>{{ form.title }}</h2>
+<form action="/thesis/upload/"  method="post">
+    {% csrf_token %}
+    <input type="text" name="video_dir" />
+    <input type="submit" />
+</form>
+  
 <a href="/thesis/upload/">Upload your video</a><br />
 <video width="640" height="480" autoplay>
     <source src="{% static  media %}" type="video/mp4"> Your browser does not

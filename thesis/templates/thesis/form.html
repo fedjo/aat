@@ -2,8 +2,16 @@
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
-<form action="/thesis/upload/" enctype="multipart/form-data" method="post">
+<p> {{ form.video_dir }} </p>
+
+<form action="/thesis/process/" enctype="multipart/form-data" method="post">
     {% csrf_token %}
     <input type="file" name="video" />
+    <input type="hidden" name="video_dir" value="{{ form.video_dir }}"/>
+    <select name="recognizer">
+	<option value="LBPH">Local Binary Patterns Histogram</option>
+  	<option value="EF">Eighen Faces</option>
+  	<option value="FF">Fisher Faces</option>
+    </select> 
     <input type="submit" />
 </form>
