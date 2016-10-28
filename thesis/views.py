@@ -29,15 +29,17 @@ def upload_video(request):
             context = { 'form' : vidForm }
             return render(request, 'thesis/form.html', context)
     else:
-        form = PostForm()
-        return render(request, 'thesis/index.html', context)
+        vidForm = VideoForm()
+        context = { 'form' : vidForm }
+        return render(request, 'thesis/form.html', context)
         
 @Clock.time
 def process_upload(request):
     if request.method == 'POST':
+        #request.upload_handlers.pop(0)
         form = VideoForm(request.POST, request.FILES)
         if form.is_valid():
-            #print request.POST['video_dir']
+            print request.FILES['video']
             app = App(request.FILES['video'], 
                         request.POST['recognizer'],
                         request.POST['video_dir'] 
@@ -47,4 +49,3 @@ def process_upload(request):
     else:
         form = VideoForm()
     return render(request, 'thesis/form.html', {'form': form})
-
