@@ -1,5 +1,6 @@
 from django.conf import settings
 from clock import Clock
+from recognizers import Recognizer
 
 import numpy
 import cv2
@@ -21,14 +22,13 @@ class Video:
         # Dictionary holding the label as a key and name of the person as value
         self.face_labelsDict = {}
         # Classifiers for detectMultiScale() face detector
-        self.face_cascade = cv2.CascadeClassifier(settings.STATIC_PATH + '/haarcascade_frontalface_default.xml')
+        self.face_cascade = cv2.CascadeClassifier(settings.STATIC_PATH + '/haarcascade_frontalface_alt2.xml')
         self.profile_cascade = cv2.CascadeClassifier(settings.STATIC_PATH + '/haarcascade_profileface.xml')
-        # Dictionary providing the recognizer class for each recognizer
-        self.recognDict = { 
-                    'LBPH': self.LBPHRecognizer,
-                    'FF':  self.fisherFaceRecognizer,
-                    'EF': self.eigenFaceRecognizer
-                }
+
+    def setRecognizer(self, name):
+        # Read CSV face file and populate Face training set and labels
+        self.read_csv_file(recogn=name)
+        self.recognizer = Recognizer(name, self.faces_db, self.labels, self.face_labelsDict)
 
 
     def printName(self):
@@ -38,7 +38,7 @@ class Video:
 
     @Clock.time
     def detectFaces(self, useRecognition=False):
-    
+
         print 'Start reading and writing frames'
 
         cap = cv2.VideoCapture(self.video_path)
@@ -67,8 +67,10 @@ class Video:
             # Faces and Profile rects discovered at the current frame
             current_faces = []
 
-            faces = self.face_cascade.detectMultiScale(gray, 1.1, 3)
-            profiles = self.profile_cascade.detectMultiScale(gray, 1.1, 3)
+            faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.3,
+                    minNeighbors=4, minSize=(60, 60))
+            profiles = self.profile_cascade.detectMultiScale(gray, scaleFactor=1.3,
+                    minNeighbors=4, minSize=(60, 60))
             #__throw_overlapping(profiles)
             if len(faces) > 0:
                 all_frames_face_rects.extend(faces)
@@ -84,7 +86,7 @@ class Video:
                 cv2.rectangle(frame_with_faces, (x,y), (x+w, y+h), (0,0,255),2)
                 # Predict possible faces on the original frame
                 if useRecognition:
-                    faceName = self.predictFaces(gray, (x,y,w,h))
+                    faceName = self.recognizer.predictFaces(gray, (x,y,w,h))
                     if faceName:
                         cv2.putText(frame_with_faces, faceName, (x, y-10), 
                                     cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 3)
@@ -97,39 +99,7 @@ class Video:
         cap.release()
     
 
-    def LBPHRecognizer(self):
-        self.recognizer = cv2.face.createLBPHFaceRecognizer()
-        self.recognizer.train(self.faces_db, numpy.array(self.labels))
-
-    def fisherFaceRecognizer(self):
-        self.recognizer = cv2.face.createFisherFaceRecognizer()
-        try:
-            self.recognizer.train(self.faces_db, numpy.array(self.labels))
-        except Exception, e:
-            print('error: ', str(e))
-        finally:
-            return
-
-    def eigenFaceRecognizer(self):
-        self.recognizer = cv2.face.createEigenFaceRecognizer()
-        try:
-            self.recognizer.train(self.faces_db, numpy.array(self.labels))
-        except Exception, e:
-            print('error: ', str(e))
-        finally:
-            return
-            
-
-    def predictFaces(self, gray_frame, (x,y,w,h)):
-        nbr_pred, conf = self.recognizer.predict(cv2.resize(gray_frame[y: y+h, x:
-            x+w], (50, 50)))
-        if conf > 100:
-            #print "{} is Recognized with confidence {}".format(self.face_labelsDict[nbr_pred], conf)
-            return self.face_labelsDict[nbr_pred]
-        return ""
-
-
-    def read_csv_file(self, path, recogn):
+    def read_csv_file(self, recogn, path=""):
         path = settings.STATIC_PATH + "/faces.csv"
         img_path = settings.STATIC_PATH + "/"
         with open(path, 'rb') as csvfile:
@@ -140,12 +110,12 @@ class Video:
                 image = cv2.imread(img_path + str(row[0]))
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 if recogn == 'LBPH':
-                    faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+                    faces = self.face_cascade.detectMultiScale(gray, 1.1, 6)
                     for (x,y,w,h) in faces: 
                         self.faces_db.append(gray[y:y+h, x:x+w])
                         self.labels.append(int(row[1]))
                 else:
-                    self.faces_db.append(cv2.resize(gray, (50, 50)))
+                    self.faces_db.append(cv2.resize(gray, (80, 80)))
                     self.labels.append(int(row[1]))
         print self.face_labelsDict
 

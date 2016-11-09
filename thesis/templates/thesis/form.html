@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+i<!DOCTYPE html>
 
 {% load staticfiles %}
 
@@ -58,26 +58,34 @@
 
         <div class="container-fluid">
           <div class="row">
-            <div class="col-sm-3 col-md-2 sidebar">
+            <div class="col-sm-3 col-md-3 sidebar">
                     {% block side_block %}
                     <div class="form-group">
                       <p>Detect your people</p>
-                      <form action="/thesis/upload/"  method="post">
+                      <form action="/thesis/process/" enctype="multipart/form-data" method="post" >
                         {% csrf_token %}
                         {% for hidden in form.hidden_fields %}
                         {{ hidden }}
-                      </br>
                         {% endfor %}
 
                         {% for field in form.visible_fields %}
-                        {% if not field.name == "iszip" %}
+                        {% if not field.name == "iszip" and not field.name == "video" %}
+                        {{ field.name }}
+
+                        <div class="input-group">
                         {{ field }}
+                        <span class="input-group-addon">?</span>
+                      </div>
                         {% endif %}
                         {% if field.name == "video" %}
-                        <!-- <p class="file">
-                        {{ field }}
-                        <label for="file">Upload your image</label>
-                        </p> -->
+                        <div class="form-group">
+                          <label for="exampleInputFile">Please specify the video you want to upload</label>
+                          <!-- <input type="file" id="exampleInputFile"> -->
+
+                          {{ field }}
+                          <p class="help-block">video can be in either uncompressed or zip format</p>
+                        </div>
+
                         {% endif %}
                         {% endfor %}
 
@@ -96,7 +104,7 @@
                     </div>
                     {% endblock %}
             </div>
-            <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-3 main">
+            <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
                <div>
                     {% block body_block %}
 

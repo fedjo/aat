@@ -57,7 +57,7 @@
 
         <div class="container-fluid">
           <div class="row">
-            <div class="col-sm-3 col-md-2 sidebar">
+            <div class="col-sm-3 col-md-3 sidebar">
                     {% block side_block %}
                     <p>Detect your people</p>
 
@@ -82,7 +82,7 @@
                       <a href="/thesis/upload/" class="fui-plus btn btn-block btn-lg btn-primary"></a><br />
                     {% endblock %}
             </div>
-            <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-3 main">
+            <div class="col-sm-9 col-sm-offset-3 col-md-9col-md-offset-3 main">
                <div>
                     {% block body_block %}
                     <!-- <video width="640" height="480" autoplay controls >
@@ -92,10 +92,11 @@
 
                     <div id="vjs_video_3" data-setup="{}" poster="{% static 'images/lena.png' %}" preload="auto"
                     class="video-js vjs-paused vjs-controls-disabled vjs-user-inactive" style="width: 950px; height: 550px;">
-                      <video width="950" height="550" class="vjs-tech" preload="auto" poster="{% static 'images/lena.png' %}" data-setup="{}" id="vjs_video_3_html5_api">
+                      <video width="950" height="550" class="vjs-tech" preload="auto" poster="{% static 'images/lena.png' %}" data-setup='{ "playbackRates": [0.5, 1, 1.5, 2] }' id="vjs_video_3_html5_api">
                         <source src="{% static  'images/output.mp4' %}" type="video/mp4">
                         </video>
                     </div>
+
                     {% endblock %}
               </div>
             </div>

@@ -4,14 +4,20 @@ class App:
 
     def __init__(self, filename, recognizer, video_dir):
 
-            self.video = Video(filename.temporary_file_path()) 
-            self.video_directory = video_dir
-            self.video.read_csv_file("", recognizer)
-            self.video.recognDict[recognizer]()
-            print(filename.temporary_file_path(), ' ** ', recognizer, ' ** ',
-                    video_dir)
-            self.video.detectFaces(True)
+            if filename is not "":
+                print(filename.temporary_file_path(), ' ** ', recognizer, ' ** ',
+                       video_dir)
+            else:
+                print(filename, ' ** ', recognizer, ' ** ',
+                       video_dir)
 
-    def printVideoName(self):
-            return self.video.printName()
+            if not video_dir:
+                video = Video(filename.temporary_file_path()) 
+            else:
+                video = Video(video_dir)
+            if recognizer and True:
+                video.setRecognizer(recognizer)
+                video.detectFaces(True)
+            else:
+                video.detectFaces(False)
 
