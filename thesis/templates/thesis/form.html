@@ -27,6 +27,15 @@ i<!DOCTYPE html>
     <script>
      videojs.options.flash.swf = "{% static 'flat-ui/dist/js/vendors/video-js.swf' %}"
    </script>
+   <script>
+      function listInfo(type) {
+        document.getElementById('body').innerHTML = '<img id="theImg" src="/static/images/lena.png" />';
+      }
+
+      function removeImg() {
+        document.getElementById('theImg').remove();
+      }
+   </script>
 
 
       <!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
@@ -51,6 +60,7 @@ i<!DOCTYPE html>
               <ul class="nav navbar-nav navbar-right">
                     <li><a href="#">Home</a></li>
                   <li><a href="#">About</a></li>
+                  <li><a href="#">View Annotated Videos</a></li>
                   </ul>
             </div>
           </div>
@@ -62,7 +72,7 @@ i<!DOCTYPE html>
                     {% block side_block %}
                     <div class="form-group">
                       <p>Detect your people</p>
-                      <form action="/thesis/process/" enctype="multipart/form-data" method="post" >
+                      <form id="second-form" action="/thesis/process/" enctype="multipart/form-data" method="post" >
                         {% csrf_token %}
                         {% for hidden in form.hidden_fields %}
                         {{ hidden }}
@@ -70,18 +80,21 @@ i<!DOCTYPE html>
 
                         {% for field in form.visible_fields %}
                         {% if not field.name == "iszip" and not field.name == "video" %}
-                        {{ field.name }}
 
+                        <label for="inputTiltle">{{ field.name }}</label>
                         <div class="input-group">
-                        {{ field }}
-                        <span class="input-group-addon">?</span>
-                      </div>
+                          {{ field }}
+                          <span class="input-group-addon"
+                                onmouseover='var v = this.parentNode.childNodes[1].id;  listInfo(v);'
+                                onmouseout="removeImg();">
+                                ?
+                          </span>
+                        </div>
                         {% endif %}
                         {% if field.name == "video" %}
                         <div class="form-group">
                           <label for="exampleInputFile">Please specify the video you want to upload</label>
                           <!-- <input type="file" id="exampleInputFile"> -->
-
                           {{ field }}
                           <p class="help-block">video can be in either uncompressed or zip format</p>
                         </div>
@@ -97,15 +110,22 @@ i<!DOCTYPE html>
                           </label>
                         {% endfor %}
 
-                        <input class="fui-video btn btn-block btn-lg btn-primary" type="submit" value="Upload video" />
-                        <a class="fui-video btn btn-block btn-lg btn-primary"></a>
-                        <a class="fui-eye btn btn-block btn-lg btn-primary"></a>
+                        <a class="fui-video btn btn-block btn-lg btn-primary" onclick="myFunction('No')"></a>
+                        <a class="fui-eye btn btn-block btn-lg btn-primary" onclick="myFunction('')"></a>
+
+                        <script>
+                            function myFunction(val) {
+                              if(val != '')
+                                document.getElementById("id_recognizer").value = val;
+                              document.getElementById("second-form").submit();
+                            }
+                        </script>
                       </form>
                     </div>
                     {% endblock %}
             </div>
             <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
-               <div>
+               <div id="body">
                     {% block body_block %}
 
                     {% endblock %}

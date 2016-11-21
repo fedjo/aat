@@ -50,6 +50,7 @@
               <ul class="nav navbar-nav navbar-right">
                     <li><a href="#">Home</a></li>
                   <li><a href="#">About</a></li>
+                  <li><a href="#">View Annotated Videos</a></li>
                   </ul>
             </div>
           </div>
@@ -61,7 +62,7 @@
                     {% block side_block %}
                     <p>Detect your people</p>
 
-                    <form action="/thesis/upload/"  method="post">
+                    <form id="first-form" action="/thesis/upload/"  method="post">
                       {% csrf_token %}
                       {% for hidden in form.hidden_fields %}
                       <div class="form-group">
@@ -74,9 +75,16 @@
                       {{ field }}
                     </div>
                       {% endfor %}
-                      <input class="fui-upload btn btn-block btn-lg btn-primary" type="submit" value="Upload video" />
-                      <a class="fui-video btn btn-block btn-lg btn-primary"></a>
-                      <a class="fui-eye btn btn-block btn-lg btn-primary"></a>
+                      <!-- <input class="fui-upload btn btn-block btn-lg btn-primary" type="submit" value="Upload video" /> -->
+                      <a class="fui-video btn btn-block btn-lg btn-primary" onclick="myFunction(true)"></a>
+                      <a class="fui-eye btn btn-block btn-lg btn-primary" onclick="myFunction(false)"></a>
+
+                      <script>
+                          function myFunction(bool) {
+                              document.getElementById("id_recognizer").value = bool;
+                              document.getElementById("first-form").submit();
+                          }
+                      </script>
                     </form>
                     <p>Do you want to specify more parameters?<p>
                       <a href="/thesis/upload/" class="fui-plus btn btn-block btn-lg btn-primary"></a><br />
