@@ -1,6 +1,9 @@
 from django.conf import settings
+from django.http import HttpResponse
 from clock import Clock
 from recognizers import Recognizer
+
+from os.path import splitext
 
 import numpy
 import cv2
@@ -45,7 +48,12 @@ class Video:
         fourcc = cap.get(cv2.CAP_PROP_FOURCC)
         fps = cap.get(cv2.CAP_PROP_FPS)
         #fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('static/images/output.mp4', int(fourcc), fps, (640, 480))
+        middle_name = "detection-only"
+        if hasattr(self, 'recognizer'):
+            middle_name = self.recognizer.recongnName
+        out_vid_path = splitext(self.video_path)[0] + '-' \
+                +  middle_name + '.mp4'
+        out = cv2.VideoWriter(out_vid_path, int(fourcc), fps, (640, 480))
 
         # Face/Profiles Rectangles lists
         all_frames_face_rects = []

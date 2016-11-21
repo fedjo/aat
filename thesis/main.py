@@ -2,20 +2,17 @@ from utils.video import Video
 
 class App:
 
-    def __init__(self, filename, recognizer, video_dir):
+    def __init__(self, filename, recognizer, video_dir, scale=1.3, neighbors=3,
+            Min_X_dimension=50, Min_Y_dimension=50):
 
-            if filename is not "":
-                print(filename.temporary_file_path(), ' ** ', recognizer, ' ** ',
-                       video_dir)
-            else:
-                print(filename, ' ** ', recognizer, ' ** ',
+            print(filename, ' ** ', recognizer, ' ** ',
                        video_dir)
 
-            if not video_dir:
-                video = Video(filename.temporary_file_path()) 
+            if  video_dir == "":
+                video = Video(filename) 
             else:
                 video = Video(video_dir)
-            if recognizer and True:
+            if recognizer != "":
                 video.setRecognizer(recognizer)
                 video.detectFaces(True)
             else:
