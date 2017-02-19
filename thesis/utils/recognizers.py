@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy
 
+from django.conf import settings
 
 class Recognizer(object):
 
@@ -11,7 +12,8 @@ class Recognizer(object):
         self.recognDict = { 
                     'LBPH': cv2.face.createLBPHFaceRecognizer,
                     'FF':  cv2.face.createFisherFaceRecognizer,
-                    'EF': cv2.face.createEigenFaceRecognizer
+                    'EF': cv2.face.createEigenFaceRecognizer,
+                    'KNN': cv2.face.createKNNLBPHFaceRecognizer
                 }
         self.recongnName = recongnName
         self.labelsDict = labelsDict
@@ -33,71 +35,23 @@ class Recognizer(object):
             return
 
     def predictFaces(self, gray_img, (x,y,w,h)):
+            f = open(os.path.join(settings.STATIC_PATH, \
+                'faces_in_current_video.txt'), 'a+'); 
             #gray_frame = cv2.cvtColor(org_img, cv2.COLOR_BGR2GRAY)
             #for (x,y,w,h) in frames:
-            if self.recongnName is not 'LBPH':
+            conf = 0.0
+            if (self.recongnName is not 'LBPH') or (self.recongnName is not 'KNN'):
                 gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], (80, 80))
-                nbr_pred, conf = self.recognizer.predict(gray_resized)
+                nbr_pred = self.recognizer.predict(gray_resized)
             else:
                 nbr_pred, conf = self.recognizer.predict(gray_img[y: y+h, x: x+w])
             print "{} is Recognized with confidence {}".format(self.labelsDict[nbr_pred], conf)
-
-
-#class customFaceRecognizer(recognizer):
-    
-    ## This should be a C++ Mat
-    #labels = []
-    ## This should be a vector<Mat>
-    #histograms = [] 
-
-    #def __init__(self, faces_db, labels, 
-            #grid_x = 8, grid_x = 8, radius = 1, neighbors = 8, 
-            #threshold = sys.float_info.max, numOfClasses):
-
-        ##self.recognizer = cv2.face.createEigenFaceRecognizer()
-        #self.faces_db = faces_db
-        #self.labels = labels
-
-        #self.grid_x = grid_x
-        #self.grid_y = grid_y
-        #self.radius = radius
-        #self.neighbors = neighbors
-        #self.threshold = threshold
-        #self.classes = numOfClasses
-
-    #def load(filename):
-        ## TODO
-        ## Implement the reading functionality
-		#fs = cv2.FileStorage(filename, cv2.FileStorage_READ);
-        #if not fs.isOpened():
-			##CV_Error(CV_StsError, "File can't be opened for writing!");
-            #pass
-
-        #self.radius = fs['radius']
-        #self.neighbors = fs['neighbors']
-        #self.grid_x = fs['grid_x']
-        #self.grid_y = fs.['grid_y']
-		## Read matrices
-		##readFileNodeList(fs["histograms"], _histograms);
-		#self.labels = fs['labels']
-
-		#fs.release();
-
-   #def save(filename):
-        #fs = cv2.FileStorage(filename, cv2.FileStorage_WRITE)
-        #if not fs.isOpened():
-			##CV_Error(CV_StsError, "File can't be opened for writing!");
-            #pass
-
-        ## TODO
-        ## Here to implement the writing funcitonality
-        
-        #fs.realease()
-
-    ##def readFileNodeList(filenode, result):
-        ##if filenode.type() cv2.FileNode_SEQ:
-            ##for it in filenode:
-
-
+            if ( 
+                (self.recongnName == 'LBPH' and conf <= 160.5) or  
+                (self.recongnName == 'FF' and conf <= 420) or 
+                (self.recongnName == 'EF' and conf <= 2100)
+                ):
+                f.write(self.labelsDict[nbr_pred] + '\n')
+                return self.labelsDict[nbr_pred]
 
 

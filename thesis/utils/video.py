@@ -3,7 +3,9 @@ from django.http import HttpResponse
 from clock import Clock
 from recognizers import Recognizer
 
-from os.path import splitext
+from os import mkdir, listdir, chdir
+from os.path import splitext, join, split
+import subprocess
 
 import numpy
 import cv2
@@ -11,6 +13,12 @@ import sys
 import csv
 import timeit
 
+def create_ui_video_name(filename, recognizer):
+    if not recognizer:
+        recognizer = 'DET-ONLY'
+    head, tail = split(filename)
+    name = tail.split('.')[0]
+    return join(settings.STATIC_PATH, name + '-' + recognizer + '.mp4')
 
 class Video:
 
@@ -44,16 +52,17 @@ class Video:
 
         print 'Start reading and writing frames'
 
+        middle_name = ""
+        if hasattr(self, 'recognizer'):
+            middle_name = self.recognizer.recongnName
+        video_store_path = create_ui_video_name(self.video_path, middle_name)  
+        print video_store_path
+
         cap = cv2.VideoCapture(self.video_path)
         fourcc = cap.get(cv2.CAP_PROP_FOURCC)
         fps = cap.get(cv2.CAP_PROP_FPS)
         #fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        middle_name = "detection-only"
-        if hasattr(self, 'recognizer'):
-            middle_name = self.recognizer.recongnName
-        out_vid_path = splitext(self.video_path)[0] + '-' \
-                +  middle_name + '.mp4'
-        out = cv2.VideoWriter(out_vid_path, int(fourcc), fps, (640, 480))
+        out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
 
         # Face/Profiles Rectangles lists
         all_frames_face_rects = []
@@ -62,6 +71,9 @@ class Video:
         if not(cap.isOpened()):
             return HttpResponse('Video not opened')
         
+        i = 0
+        frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
+        mkdir(frames_temp_path)
         while(cap.isOpened()):
             retval, frame = cap.read()
             if not frame is None: 
@@ -72,13 +84,16 @@ class Video:
                 cap.release()
                 return
 
+            if i % 50 == 0:
+                frame_name = join(frames_temp_path, 'frame' + str(i / 50) + '.png')
+                cv2.imwrite(frame_name, frame)
             # Faces and Profile rects discovered at the current frame
             current_faces = []
 
             faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.3,
-                    minNeighbors=4, minSize=(60, 60))
+                    minNeighbors=4, minSize=(55, 55))
             profiles = self.profile_cascade.detectMultiScale(gray, scaleFactor=1.3,
-                    minNeighbors=4, minSize=(60, 60))
+                    minNeighbors=4, minSize=(55, 55))
             #__throw_overlapping(profiles)
             if len(faces) > 0:
                 all_frames_face_rects.extend(faces)
@@ -102,10 +117,24 @@ class Video:
             # Write frame to video file
             scaled_frame_with_faces = cv2.resize(frame_with_faces, (640, 480))
             out.write(scaled_frame_with_faces)
+            i +=1
 
         out.release()
         cap.release()
     
+
+
+    def perform_obj_detection(self):
+        frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
+        chdir('/home/yiorgos/thesis/opencv_dnn/')
+        cmd = ['./objdetect']
+        for frame_name in listdir(frames_temp_path):
+            cmd.append(join(frames_temp_path, frame_name))
+            p = subprocess.Popen(cmd)
+            stdout, stderr = p.communicate()
+            cmd.pop()
+            print stdout
+
 
     def read_csv_file(self, recogn, path=""):
         path = settings.STATIC_PATH + "/faces.csv"

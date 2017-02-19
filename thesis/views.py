@@ -6,18 +6,20 @@ from utils.video import Video
 from utils.clock import Clock
 
 from os import listdir, walk, makedirs, rmdir
-from os.path import isfile, join, exists
+from os.path import isfile, join, exists, split
 import shutil
 import zipfile
 
 from .forms import VideoForm
 from .forms import PostForm
 from main import App
+from utils.video import create_ui_video_name
 
 import timeit
 
 
 # Create your views here.
+
 
 def index(request):
     if request.method == 'GET':        
@@ -30,16 +32,23 @@ def index(request):
 def upload_video(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
-        video_dir = request.POST['video_dir']
-        bool_rec = request.POST['recognizer']
         if form.is_valid():
+            print form.as_table()
+            video_dir = request.POST['video_dir']
+            bool_rec = request.POST['recognizer']
+            obj_dec = request.POST['objdetection']
+            d = {}
+            recogn_name = ''
             if bool_rec == 'true':
-                App("", 'LBPH', video_dir)
-            else:
-                App("", "", video_dir)
-            context = { 'form' :  PostForm(), 'media': "images/output.mp4"  }
+                recogn_name = 'LBPH'
+            app = App(video_dir, recogn_name)
+            d = app.create_name_dict_from_file(recogn_name)
+            h, ui_video_name =  split(create_ui_video_name(video_dir, recogn_name))
+            print ui_video_name
+            context = { 'form' :  PostForm(), 'media': ui_video_name, 'names': d  }
             return render(request, 'thesis/index.html', context)
         else:
+            print form.errors.as_data()
             return HttpResponseBadRequest("Form is not valid")
     else:
         vidForm = VideoForm()
@@ -50,8 +59,12 @@ def upload_video(request):
 def process_upload(request):
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
-        video = request.FILES['video']
+        if not form.is_valid():
+            form = VideoForm()
+            return render(request, 'thesis/form.html', {'form': form})
 
+
+        video = request.FILES['video']
         # Handle ZIP files
         if request.POST['iszip'] == 'Yes':
             if not zipfile.is_zipfile(video.temporary_file_path()):
@@ -89,18 +102,17 @@ def process_upload(request):
                 rec = form.recognizer
             app = App(video, 
                         rec,
-                        "",
                         request.POST['Scale'],
                         request.POST['Neighbors'],
                         request.POST['Min_X_dimension'],
                         request.POST['Min_Y_dimension']
                             )
             shutil.rmtree('/tmp/video/')
-            context = { 'boldmessage' :  "Test video", 'media': "images/output.mp4"  }
+            h, ui_video_name = split(create_ui_video_name(video, rec))
+            context = { 'boldmessage' :  "Test video", 'media': ui_video_name  }
             return render(request, 'thesis/index.html', context)
         else:
-            print "OK"
-            print form.errors
+            print form.errors.as_table()
             form = VideoForm()
     else:
         form = VideoForm()
@@ -109,17 +121,18 @@ def process_upload(request):
 
 @Clock.time
 def parse_directory(request):
-    dr = "/home/yiorgos/"
+    dr = "/media/yiorgos/Maxtor/thesis_video/eu_screen_SD/"
     # dr = request.POST['dir']
     videos = []
     for(dirpath, dirnames, filenames) in walk(dr):
         for f in filenames:
-            if f.endswith('.mp4') or f.endswith('.mov'):
+            #if f.endswith('.mp4') or f.endswith('.mov'):
+            if f.endswith('.mp4'):
                 videos.append(join(dirpath, f))
     #print videos
     for v in videos:
         for r in ['LBPH', 'FF', 'EF']:
-            App("", r, v)
+            App(v, r)
     return HttpResponse("Videos parsed!")
 
 

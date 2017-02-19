@@ -76,12 +76,17 @@
                     </div>
                       {% endfor %}
                       <!-- <input class="fui-upload btn btn-block btn-lg btn-primary" type="submit" value="Upload video" /> -->
-                      <a class="fui-video btn btn-block btn-lg btn-primary" onclick="myFunction(true)"></a>
-                      <a class="fui-eye btn btn-block btn-lg btn-primary" onclick="myFunction(false)"></a>
+                      <a class="fui-eye btn btn-block btn-lg btn-primary" 
+                          onclick="myFunction(false, false)"></a>
+                      <a class="fui-user btn btn-block btn-lg btn-primary"
+                          onclick="myFunction(true, false)"></a>
+                      <a class="fui-image btn btn-block btn-lg btn-primary" 
+                          onclick="myFunction(false, true)"></a>
 
                       <script>
-                          function myFunction(bool) {
+                          function myFunction(bool, objbool) {
                               document.getElementById("id_recognizer").value = bool;
+                              document.getElementById("id_objdetection").value = objbool;
                               document.getElementById("first-form").submit();
                           }
                       </script>
@@ -101,9 +106,29 @@
                     <div id="vjs_video_3" data-setup="{}" poster="{% static 'images/lena.png' %}" preload="auto"
                     class="video-js vjs-paused vjs-controls-disabled vjs-user-inactive" style="width: 950px; height: 550px;">
                       <video width="950" height="550" class="vjs-tech" preload="auto" poster="{% static 'images/lena.png' %}" data-setup='{ "playbackRates": [0.5, 1, 1.5, 2] }' id="vjs_video_3_html5_api">
-                        <source src="{% static  'images/output.mp4' %}" type="video/mp4">
+                        <source src="{% static  media %}" type="video/mp4">
                         </video>
                     </div>
+                    <ul class="list-group">
+                        {% for key, value in names.items %}
+                        <li class="list-group-item">
+                            <span class="badge">{{ value }}</span>
+                            {{ key }}
+                        </li>
+                        {% endfor %}
+                        <!--<li class="list-group-item">
+                            <span class="badge">14</span>
+                             Cras justo odio
+                        </li>
+                        <li class="list-group-item">
+                            <span class="badge">4</span>
+                             Cras justo odio
+                        </li>
+                        <li class="list-group-item">
+                            <span class="badge">1</span>
+                             Cras justo odio
+                        </li>-->
+                    </ul>
 
                     {% endblock %}
               </div>

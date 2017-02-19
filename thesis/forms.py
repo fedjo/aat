@@ -10,6 +10,7 @@ class VideoForm(forms.Form):
     recognizer = forms.ChoiceField(choices=[('LBPH', 'Local Binary Patterns Histogram'),
 						    ('EF', 'Eighen Faces'),
 						    ('FF', 'Fisher Faces'),
+						    ('KNN', 'LBPH using K-Nearest Neighbor'),
                             ('No', 'Do not recognize faces')],
                             widget=forms.Select(attrs={'class': 'form-control select select-primary', 'data-toggle': 'select'}))
     Scale = forms.FloatField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}))
@@ -21,7 +22,11 @@ class VideoForm(forms.Form):
 
 class PostForm(forms.Form):
     title = "Please specify the directory containing your videos"
-    video_dir = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
-    recognizer = forms.BooleanField(widget=forms.HiddenInput(), required=False)
+    video_dir = forms.CharField(widget=forms.TextInput(attrs={'class': \
+        'form-control'}), required=True)
+    recognizer = forms.CharField(widget=forms.HiddenInput(), required=True, \
+            initial=False)
+    objdetection = forms.CharField(widget=forms.HiddenInput(), required=True, \
+            initial=False)
 
 
