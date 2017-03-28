@@ -53,7 +53,7 @@ def upload_video(request):
     else:
         vidForm = VideoForm()
         context = { 'form' : vidForm }
-        return render(request, 'thesis/form.html', context)
+        return render(request, 'thesis/block.html', context)
         
 @Clock.time
 def process_upload(request):
@@ -61,7 +61,7 @@ def process_upload(request):
         form = VideoForm(request.POST, request.FILES)
         if not form.is_valid():
             form = VideoForm()
-            return render(request, 'thesis/form.html', {'form': form})
+            return render(request, 'thesis/block.html', {'form': form})
 
 
         video = request.FILES['video']
@@ -117,7 +117,7 @@ def process_upload(request):
     else:
         form = VideoForm()
 
-    return render(request, 'thesis/form.html', {'form': form})
+    return render(request, 'thesis/block.html', {'form': form})
 
 @Clock.time
 def parse_directory(request):

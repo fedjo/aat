@@ -4,14 +4,16 @@ from clock import Clock
 from recognizers import Recognizer
 
 from os import mkdir, listdir, chdir
-from os.path import splitext, join, split
+from os.path import splitext, join, split, exists
 import subprocess
+from subprocess import PIPE
 
 import numpy
 import cv2
 import sys
 import csv
 import timeit
+import shutil
 
 def create_ui_video_name(filename, recognizer):
     if not recognizer:
@@ -20,9 +22,12 @@ def create_ui_video_name(filename, recognizer):
     name = tail.split('.')[0]
     return join(settings.STATIC_PATH, name + '-' + recognizer + '.mp4')
 
+
 class Video:
 
-    def __init__(self, path):
+    def __init__(self, path, cascades=['haarcascade_frontalface_alt2.xml',
+        'haarcascade_profileface.xml', 'haarcascade_frontalcatface_extended.xml', 
+        'haarcascade_frontalcatface.xml', 'haarcascade_frontalface_default.xml']):
         # Path of the video file
         self.video_path = path
         # Face Training set of the recognizer
@@ -33,8 +38,15 @@ class Video:
         # Dictionary holding the label as a key and name of the person as value
         self.face_labelsDict = {}
         # Classifiers for detectMultiScale() face detector
-        self.face_cascade = cv2.CascadeClassifier(settings.STATIC_PATH + '/haarcascade_frontalface_alt2.xml')
-        self.profile_cascade = cv2.CascadeClassifier(settings.STATIC_PATH + '/haarcascade_profileface.xml')
+        self.face_cascade = cv2.CascadeClassifier(join(settings.STATIC_PATH, \
+            'haar_cascades', 'haarcascade_frontalface_alt2.xml'))
+        self.profile_cascade = cv2.CascadeClassifier(join(settings.STATIC_PATH, \
+            'haar_cascades', 'haarcascade_profileface.xml'))
+
+        # optional implementation to use all/selected haar cascades
+        cascadesdir = join(settings.STATIC_PATH, 'haar_cascades')
+        self.haarcascades = \
+                [ cv2.CascadeClassifier(join(cascadesdir, x)) for x in listdir(cascadesdir) if x in cascades ]
 
     def setRecognizer(self, name):
         # Read CSV face file and populate Face training set and labels
@@ -48,7 +60,7 @@ class Video:
 
 
     @Clock.time
-    def detectFaces(self, useRecognition=False):
+    def detectFaces(self, scale, neighbors, minx, miny, useRecognition=False):
 
         print 'Start reading and writing frames'
 
@@ -73,6 +85,8 @@ class Video:
         
         i = 0
         frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
+        if exists(frames_temp_path):
+            shutil.rmtree(frames_temp_path)
         mkdir(frames_temp_path)
         while(cap.isOpened()):
             retval, frame = cap.read()
@@ -84,23 +98,32 @@ class Video:
                 cap.release()
                 return
 
+            # Keep every 50 frames for object detection
             if i % 50 == 0:
                 frame_name = join(frames_temp_path, 'frame' + str(i / 50) + '.png')
                 cv2.imwrite(frame_name, frame)
+
             # Faces and Profile rects discovered at the current frame
             current_faces = []
 
-            faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.3,
-                    minNeighbors=4, minSize=(55, 55))
-            profiles = self.profile_cascade.detectMultiScale(gray, scaleFactor=1.3,
-                    minNeighbors=4, minSize=(55, 55))
+            #faces = self.face_cascade.detectMultiScale(gray, scaleFactor=scale,
+                    #minNeighbors=neighbors, minSize=(minx, miny))
+            #profiles = self.profile_cascade.detectMultiScale(gray, scaleFactor=scale,
+                    #minNeighbors=neighbors, minSize=(minx, miny))
+
+            # optional implementation to use all/selected haar cascades
+            for c in self.haarcascades:
+                current_faces.extend(c.detectMultiScale(gray, 
+                    scaleFactor=scale, minNeighbors=neighbors,
+                    minSize=(minx, miny)))
+
             #__throw_overlapping(profiles)
-            if len(faces) > 0:
-                all_frames_face_rects.extend(faces)
-                current_faces.extend(faces)
-            if len(profiles) > 0:
-                all_frames_face_rects.extend(profiles)
-                current_faces.extend(profiles)
+            #if len(faces) > 0:
+                #all_frames_face_rects.extend(faces)
+                #current_faces.extend(faces)
+            #if len(profiles) > 0:
+                #all_frames_face_rects.extend(profiles)
+                #current_faces.extend(profiles)
 
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame 
@@ -128,12 +151,21 @@ class Video:
         frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
         chdir('/home/yiorgos/thesis/opencv_dnn/')
         cmd = ['./objdetect']
+        detectd_frames = dict()
         for frame_name in listdir(frames_temp_path):
-            cmd.append(join(frames_temp_path, frame_name))
-            p = subprocess.Popen(cmd)
-            stdout, stderr = p.communicate()
-            cmd.pop()
-            print stdout
+            try:
+                cmd.append(join(frames_temp_path, frame_name))
+                p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
+                stdout, stderr = p.communicate()
+                cmd.pop()
+                if stdout:
+                    i = stdout.find('Best')
+                    j = stdout.find('Attempting')
+                    detectd_frames[frame_name] = stdout[i:j]
+            except:
+                print "Unexpected error: ", sys.exc_info()[0]
+                raise
+        return detectd_frames
 
 
     def read_csv_file(self, recogn, path=""):

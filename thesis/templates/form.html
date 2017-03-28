@@ -1,4 +1,4 @@
-i<!DOCTYPE html>
+<!DOCTYPE html>
 
 {% load staticfiles %}
 
@@ -29,11 +29,29 @@ i<!DOCTYPE html>
    </script>
    <script>
       function listInfo(type) {
-        document.getElementById('body').innerHTML = '<img id="theImg" src="/static/images/lena.png" />';
+        if(type == 'id_Scale') {
+          document.getElementById('body').innerHTML = '<div id="info"><h1><h1>The Scale attribute</h1>' +
+            '<p>The scale attribute refers to the scale factor the the scanning window'
+            + 'will increase/decrease</p><img id="theImg" src="/static/images/big_scale.png" />'+
+            '<button class="btn btn-embossed btn-primary" onclick="removeImg();">Close</button></div>';
+        }
+        if(type == 'id_Neighbors') {
+          document.getElementById('body').innerHTML = '<div id="info"><h1><h1>The Neighbors attribute</h1>' +
+            '<p>The scale attribute refers to the scale factor the the scanning window'
+            + 'will increase/decrease</p><img id="theImg" src="/static/images/min_neighbors.png" />'+
+            '<button class="btn btn-embossed btn-primary" onclick="removeImg();">Close</button></div>';
+        }
+        if(type.indexOf("Min") !== -1) {
+          document.getElementById('body').innerHTML = '<div id="info"><h1>The Minimum X, Y dimension attributes</h1>' +
+            '<p>The scale attribute refers to the scale factor the the scanning window'
+            + 'will increase/decrease</p><img id="theImg" src="/static/images/min_x_y.png" /><img id="theImg" src="/static/images/min_x_y_2.png" />' +
+            '<button class="btn btn-embossed btn-primary" onclick="removeImg();">Close</button></div>';
+        }
       }
 
       function removeImg() {
-        document.getElementById('theImg').remove();
+        document.getElementById('info').remove();
+        document.getElementById('body').innerHTML = this.body.innerHTML;
       }
    </script>
 
@@ -54,11 +72,11 @@ i<!DOCTYPE html>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="/rango/">My Thesis</a>
+              <a class="navbar-brand" href="/thesis/">My Thesis</a>
             </div>
             <div class="navbar-collapse collapse">
               <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#">Home</a></li>
+                    <li><a href="/thesis/">Home</a></li>
                   <li><a href="#">About</a></li>
                   <li><a href="#">View Annotated Videos</a></li>
                   </ul>
@@ -85,8 +103,8 @@ i<!DOCTYPE html>
                         <div class="input-group">
                           {{ field }}
                           <span class="input-group-addon"
-                                onmouseover='var v = this.parentNode.childNodes[1].id;  listInfo(v);'
-                                onmouseout="removeImg();">
+                                onmouseover='var v = this.parentNode.childNodes[1].id;  listInfo(v);' >
+                                <!--onmouseout="removeImg();">-->
                                 ?
                           </span>
                         </div>
@@ -127,12 +145,15 @@ i<!DOCTYPE html>
             <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
                <div id="body">
                     {% block body_block %}
-
+                        
                     {% endblock %}
               </div>
             </div>
           </div>
         </div>
   </body>
+   <script>
+      var body = document.getElementById('viola');
+   </script>
 
 </html>

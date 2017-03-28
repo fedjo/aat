@@ -13,7 +13,7 @@ class Recognizer(object):
                     'LBPH': cv2.face.createLBPHFaceRecognizer,
                     'FF':  cv2.face.createFisherFaceRecognizer,
                     'EF': cv2.face.createEigenFaceRecognizer,
-                    'KNN': cv2.face.createKNNLBPHFaceRecognizer
+                    'KNN': cv2.face.createLBPHFaceRecognizer
                 }
         self.recongnName = recongnName
         self.labelsDict = labelsDict
@@ -40,11 +40,17 @@ class Recognizer(object):
             #gray_frame = cv2.cvtColor(org_img, cv2.COLOR_BGR2GRAY)
             #for (x,y,w,h) in frames:
             conf = 0.0
-            if (self.recongnName is not 'LBPH') or (self.recongnName is not 'KNN'):
+            if (self.recongnName is not 'LBPH') and (self.recongnName is not 'KNN'):
+                # Eigen/Fisher face recognizer
                 gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], (80, 80))
-                nbr_pred = self.recognizer.predict(gray_resized)
+                nbr_pred, conf = self.recognizer.predict(gray_resized)
+            elif self.recognizer is 'KNN':
+                # KNN-LBPH recognizer
+                nbr_pred, conf = self.recognizer.predict_knn(gray_img[y: y+h, x: \
+                    x+w], 15, True, 5)
             else:
-                nbr_pred, conf = self.recognizer.predict(gray_img[y: y+h, x: x+w])
+                # LBPH recognizer
+                nbr_pred, conf = self.recognizer.predict(gray_img[y:y+h, x:x+w])
             print "{} is Recognized with confidence {}".format(self.labelsDict[nbr_pred], conf)
             if ( 
                 (self.recongnName == 'LBPH' and conf <= 160.5) or  
