@@ -1,1 +1,0 @@
-g++ caffe_googlenet.cpp -o objdetect -lopencv_core  -lopencv_dnn -lopencv_imgproc -lopencv_face -lopencv_imgcodecs
