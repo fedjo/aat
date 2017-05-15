@@ -38,9 +38,9 @@ RUN pip install \
 
 #RUN mkvirtualenv cv3
 
-ADD opencv/ /opt/opencv
+ADD ../../opencv/ /opt/opencv
 
-ADD opencv_contrib/ /opt/opencv_contrib
+ADD ../../opencv_contrib/ /opt/opencv_contrib
 
 WORKDIR /opt/
 
