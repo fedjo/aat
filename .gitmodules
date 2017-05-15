@@ -1,3 +1,6 @@
 [submodule "opencv_contrib"]
 	path = opencv_contrib
 	url = git@github.com:fedjo/opencv_contrib.git
+[submodule "opencv"]
+	path = opencv
+	url = git@github.com:opencv/opencv.git
