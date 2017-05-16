@@ -26,12 +26,12 @@ RUN apt-get install -y \
     libswscale-dev \
     libv4l-dev
 
-RUN pip install \
-    django \
+RUN pip install numpy 
+    #django \
     #cffi \
     #virtualenv \
     #virtualenvwrapper \
-    numpy
+    #numpy
 
 #RUN export WORKON_HOME=$HOME/.virtualenvs && \
     #source /usr/local/bin/virtualenvwrapper.sh
@@ -50,14 +50,19 @@ RUN cd opencv && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D CMAKE_INSTALL_PREFIX=/lib \
-    -D INSTALL_C_EXAMPLES=ON \
-    -D INSTALL_PYTHON_EXAMPLES=ON \
+    -D PYTHON2_EXECUTABLE=/usr/bin/python2.7 \
+    -D PYTHON_INCLUDE_DIR=/usr/include/python2.7 \
+    -D \
+PYTHON2_NUMPY_INCLUDE_DIRS=/usr/local/lib/python2.7/dist-packages/numpy/core/include \
+    -D INSTALL_C_EXAMPLES=OFF \
+    -D INSTALL_PYTHON_EXAMPLES=OFF \
     -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
-    -D BUILD_EXAMPLES=ON .. && \
+    -D BUILD_EXAMPLES=OFF .. && \
     make -j8
 
-#RUN make install && \
-    #ldconfig
+RUN cd opencv/build && \
+    make install && \
+    ldconfig
 
 #ADD . /thesis/
 
