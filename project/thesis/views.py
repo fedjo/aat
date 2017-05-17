@@ -93,6 +93,8 @@ def process_upload(request):
                 if video == "":
                     return HttpResponseBadRequest("The zip file you uploaded does not \
                             contain any video in .mp4 format")
+
+            shutil.rmtree('/tmp/video/')
         # #################
 
         if form.is_valid():
@@ -107,7 +109,6 @@ def process_upload(request):
                         request.POST['Min_X_dimension'],
                         request.POST['Min_Y_dimension']
                             )
-            shutil.rmtree('/tmp/video/')
             h, ui_video_name = split(create_ui_video_name(video, rec))
             context = { 'boldmessage' :  "Test video", 'media': ui_video_name  }
             return render(request, 'thesis/index.html', context)

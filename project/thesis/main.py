@@ -10,6 +10,8 @@ class App:
             Min_X_dimension=30, Min_Y_dimension=30):
 
             print(filename, ' ** ', recognizer, ' ** ')
+            print("The values provided are: {}, {}, {}, {}".format(scale, neighbors,
+                Min_X_dimension, Min_Y_dimension))
 
             video = Video(filename) 
             if recognizer != "":

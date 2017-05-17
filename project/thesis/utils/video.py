@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import HttpResponse
+from django.core.files.uploadedfile import TemporaryUploadedFile
 from clock import Clock
 from recognizers import Recognizer
 
@@ -18,7 +19,13 @@ import shutil
 def create_ui_video_name(filename, recognizer):
     if not recognizer:
         recognizer = 'DET-ONLY'
-    head, tail = split(filename)
+
+    if isinstance(filename, TemporaryUploadedFile):
+        filepath = filename.temporary_file_path()
+    else:
+        filepath = filename
+
+    head, tail = split(filepath)
     name = tail.split('.')[0]
     return join(settings.STATIC_PATH, name + '-' + recognizer + '.mp4')
 
@@ -29,7 +36,10 @@ class Video:
         'haarcascade_profileface.xml', 'haarcascade_frontalcatface_extended.xml', 
         'haarcascade_frontalcatface.xml', 'haarcascade_frontalface_default.xml']):
         # Path of the video file
-        self.video_path = path
+        if isinstance(path, TemporaryUploadedFile):
+            self.video_path = path.temporary_file_path()
+        else:
+            self.video_path = path
         # Face Training set of the recognizer
         self.faces_db = []
         # self.all_face_frames = []
@@ -114,8 +124,8 @@ class Video:
             # optional implementation to use all/selected haar cascades
             for c in self.haarcascades:
                 current_faces.extend(c.detectMultiScale(gray, 
-                    scaleFactor=scale, minNeighbors=neighbors,
-                    minSize=(minx, miny)))
+                    scaleFactor=float(scale), minNeighbors=int(neighbors),
+                    minSize=(int(minx), int(miny))))
 
             #__throw_overlapping(profiles)
             #if len(faces) > 0:
