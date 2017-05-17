@@ -1,0 +1,6 @@
+- [x] Fork only opencv or opencv_contrib to make the changes the other repo fetch the upstream
+
+- [x] Containerized builds. Build one container which builds and installs Opecv with Python bindings. The build another container inheriting the first and installing the app. So the firsta container will not change all the time.
+    Containers built:
+        - [ ] First container build and install opencv. Problem with luck of space and not finding numpy
+        - [ ] Second container build and install the django application
