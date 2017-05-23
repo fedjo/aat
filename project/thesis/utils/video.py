@@ -14,6 +14,7 @@ import cv2
 import sys
 import csv
 import timeit
+import time
 import shutil
 
 def create_ui_video_name(filename, recognizer):
@@ -33,7 +34,7 @@ def create_ui_video_name(filename, recognizer):
 class Video:
 
     def __init__(self, path, cascades=['haarcascade_frontalface_alt2.xml',
-        'haarcascade_profileface.xml', 'haarcascade_frontalcatface_extended.xml', 
+        'haarcascade_profileface.xml', 'haarcascade_frontalcatface_extended.xml',
         'haarcascade_frontalcatface.xml', 'haarcascade_frontalface_default.xml']):
         # Path of the video file
         if isinstance(path, TemporaryUploadedFile):
@@ -77,7 +78,7 @@ class Video:
         middle_name = ""
         if hasattr(self, 'recognizer'):
             middle_name = self.recognizer.recongnName
-        video_store_path = create_ui_video_name(self.video_path, middle_name)  
+        video_store_path = create_ui_video_name(self.video_path, middle_name)
         print video_store_path
 
         cap = cv2.VideoCapture(self.video_path)
@@ -92,7 +93,9 @@ class Video:
 
         if not(cap.isOpened()):
             return HttpResponse('Video not opened')
-        
+
+        detection_time = 0
+        recognition_time = 0
         i = 0
         frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
         if exists(frames_temp_path):
@@ -100,10 +103,16 @@ class Video:
         mkdir(frames_temp_path)
         while(cap.isOpened()):
             retval, frame = cap.read()
-            if not frame is None: 
+            if not frame is None:
                 # Get the current frame in grayscale
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             else:
+                f = open(settings.BASE_DIR + '/timelapse.log', 'a')
+                f.write('---Detection time---\n')
+                f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
+                f.write('---Recognition time---\n')
+                f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
+                f.close()
                 out.release()
                 cap.release()
                 return
@@ -122,10 +131,13 @@ class Video:
                     #minNeighbors=neighbors, minSize=(minx, miny))
 
             # optional implementation to use all/selected haar cascades
+            det_start = time.time()
             for c in self.haarcascades:
-                current_faces.extend(c.detectMultiScale(gray, 
+                current_faces.extend(c.detectMultiScale(gray,
                     scaleFactor=float(scale), minNeighbors=int(neighbors),
                     minSize=(int(minx), int(miny))))
+            det_end = time.time()
+            detection_time += det_end - det_start
 
             #__throw_overlapping(profiles)
             #if len(faces) > 0:
@@ -136,16 +148,19 @@ class Video:
                 #current_faces.extend(profiles)
 
             # Get copy of the current colored frame and
-            # draw all the rectangles of possible faces on the frame 
+            # draw all the rectangles of possible faces on the frame
             frame_with_faces = frame.copy()
+            rec_start = time.time()
             for (x,y,w,h) in current_faces:
                 cv2.rectangle(frame_with_faces, (x,y), (x+w, y+h), (0,0,255),2)
                 # Predict possible faces on the original frame
                 if useRecognition:
                     faceName = self.recognizer.predictFaces(gray, (x,y,w,h))
                     if faceName:
-                        cv2.putText(frame_with_faces, faceName, (x, y-10), 
+                        cv2.putText(frame_with_faces, faceName, (x, y-10),
                                     cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 3)
+            rec_end = time.time()
+            recognition_time += rec_end - rec_start
 
             # Write frame to video file
             scaled_frame_with_faces = cv2.resize(frame_with_faces, (640, 480))
@@ -154,7 +169,8 @@ class Video:
 
         out.release()
         cap.release()
-    
+        return
+
 
 
     def perform_obj_detection(self):
@@ -183,14 +199,14 @@ class Video:
         img_path = settings.STATIC_PATH + "/"
         with open(path, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=';')
-            for row in reader: 
+            for row in reader:
                 #print img_path+str(row[0])
                 self.face_labelsDict[int(row[1])] = str(row[0]).split('/')[1]
                 image = cv2.imread(img_path + str(row[0]))
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 if recogn == 'LBPH':
                     faces = self.face_cascade.detectMultiScale(gray, 1.1, 6)
-                    for (x,y,w,h) in faces: 
+                    for (x,y,w,h) in faces:
                         self.faces_db.append(gray[y:y+h, x:x+w])
                         self.labels.append(int(row[1]))
                 else:

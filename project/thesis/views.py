@@ -22,13 +22,14 @@ import timeit
 
 
 def index(request):
-    if request.method == 'GET':        
+    if request.method == 'GET':
         form = PostForm()
         context = { 'boldmessage' :  'Hello, this is the index page',
-                    'form' : form    
+                    'form' : form
                 }
         return render(request, 'thesis/index.html', context)
 
+@Clock.time
 def upload_video(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
@@ -54,7 +55,7 @@ def upload_video(request):
         vidForm = VideoForm()
         context = { 'form' : vidForm }
         return render(request, 'thesis/block.html', context)
-        
+
 @Clock.time
 def process_upload(request):
     if request.method == 'POST':
@@ -77,7 +78,7 @@ def process_upload(request):
             zip_ref = zipfile.ZipFile(video.temporary_file_path(), 'r')
             zip_ref.extractall(tmp_dir)
             zip_ref.close()
-    
+
             files = listdir(tmp_dir)
             if len(files) == 1:
                 if '.mp4' in files[0]:
@@ -102,7 +103,7 @@ def process_upload(request):
             rec = ""
             if request.POST['recognizer'] != 'No':
                 rec = form.recognizer
-            app = App(video, 
+            app = App(video,
                         rec,
                         request.POST['Scale'],
                         request.POST['Neighbors'],

@@ -4,7 +4,7 @@ import timeit
 
 class Clock:
 
-    @classmethod	
+    @classmethod
     def time(self, func):
 	def timed(*args, **kwargs):
 	    t_start = time.time()
@@ -35,6 +35,6 @@ class Clock:
 	    f.write('%r() %2.2f sec\n' % (func.__name__, timeit.timeit(wrapped)))
 	    f.close()
 	    return
-	
+
 	return timed
 
