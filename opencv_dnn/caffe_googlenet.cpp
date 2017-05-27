@@ -59,7 +59,7 @@ void getMaxClass(dnn::Blob &probBlob, int *classId, double *classProb)
     *classId = classNumber.x;
 }
 
-std::vector<String> readClassNames(const char *filename = "synset_words.txt")
+std::vector<String> readClassNames(const char *filename = "/opencv_dnn/synset_words.txt")
 {
     std::vector<String> classNames;
 
@@ -84,9 +84,9 @@ std::vector<String> readClassNames(const char *filename = "synset_words.txt")
 
 int main(int argc, char **argv)
 {
-    String modelTxt = "bvlc_googlenet.prototxt";
-    String modelBin = "bvlc_googlenet.caffemodel";
-    String imageFile = (argc > 1) ? argv[1] : "space_shuttle.jpg";
+    String modelTxt = "/opencv_dnn/bvlc_googlenet.prototxt";
+    String modelBin = "/opencv_dnn/bvlc_googlenet.caffemodel";
+    String imageFile = (argc > 1) ? argv[1] : "tests/space_shuttle.jpg";
 
     //! [Create the importer of Caffe model]
     Ptr<dnn::Importer> importer;
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
     }
 
     resize(img, img, Size(224, 224));       //GoogLeNet accepts only 224x224 RGB-images
-    dnn::Blob inputBlob = dnn::Blob(img);   //Convert Mat to dnn::Blob image batch
+    dnn::Blob inputBlob = dnn::Blob::fromImages(img);   //Convert Mat to dnn::Blob image batch
     //! [Prepare blob]
 
     //! [Set input blob]
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     double classProb;
     getMaxClass(prob, &classId, &classProb);//find the best class
     //! [Gather output]
-    
+
     //rectangle(img, dd, CV_RGB(0, 255,0), 1);
 
     //! [Print results]
