@@ -173,10 +173,10 @@ class Video:
 
 
 
+    @Clock.time
     def perform_obj_detection(self):
         frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
-        chdir('/home/yiorgos/thesis/opencv_dnn/')
-        cmd = ['./objdetect']
+        cmd = ['objdetect']
         detectd_frames = dict()
         for frame_name in listdir(frames_temp_path):
             try:
@@ -185,9 +185,9 @@ class Video:
                 stdout, stderr = p.communicate()
                 cmd.pop()
                 if stdout:
-                    i = stdout.find('Best')
-                    j = stdout.find('Attempting')
-                    detectd_frames[frame_name] = stdout[i:j]
+                    objclass = stdout[stdout.find('\'')+1:stdout.find('Probability')-2]
+                    probability = stdout[stdout.find('Probability')+13:stdout.find('%')+1]
+                    detectd_frames[frame_name] = (objclass, probability)
             except:
                 print "Unexpected error: ", sys.exc_info()[0]
                 raise

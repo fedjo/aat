@@ -43,10 +43,13 @@ def upload_video(request):
             if bool_rec == 'true':
                 recogn_name = 'LBPH'
             app = App(video_dir, recogn_name)
+            if True:
+                objects = app.object_detection()
             d = app.create_name_dict_from_file(recogn_name)
             h, ui_video_name =  split(create_ui_video_name(video_dir, recogn_name))
             print ui_video_name
-            context = { 'form' :  PostForm(), 'media': ui_video_name, 'names': d  }
+            context = {'form' :  PostForm(), 'media': ui_video_name, 'names': d,
+                        'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
             print form.errors.as_data()
@@ -110,8 +113,10 @@ def process_upload(request):
                         request.POST['Min_X_dimension'],
                         request.POST['Min_Y_dimension']
                             )
+            objects = app.object_detect()
             h, ui_video_name = split(create_ui_video_name(video, rec))
-            context = { 'boldmessage' :  "Test video", 'media': ui_video_name  }
+            context = { 'boldmessage' :  "Test video", 'media': ui_video_name,
+                        'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
             print form.errors.as_table()

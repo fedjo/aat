@@ -13,17 +13,18 @@ class App:
             print("The values provided are: {}, {}, {}, {}".format(scale, neighbors,
                 Min_X_dimension, Min_Y_dimension))
 
-            video = Video(filename) 
+            self.video = Video(filename)
             if recognizer != "":
-                video.setRecognizer(recognizer)
-                video.detectFaces(scale, neighbors, Min_X_dimension, \
+                self.video.setRecognizer(recognizer)
+                self.video.detectFaces(scale, neighbors, Min_X_dimension, \
                         Min_Y_dimension, True)
             else:
-                video.detectFaces(scale, neighbors, Min_X_dimension, \
+                self.video.detectFaces(scale, neighbors, Min_X_dimension, \
                         Min_Y_dimension, False)
-            
-            if False:
-                video.perform_obj_detection()
+
+
+    def object_detection(self):
+        return self.video.perform_obj_detection()
 
     def create_name_dict_from_file(self, rec):
         if not rec:
@@ -31,11 +32,11 @@ class App:
         d = {}
         with open(join(settings.STATIC_PATH, 'faces_in_current_video.txt'), 'r') as f:
             lines = f.readlines()
-            for key in lines: 
+            for key in lines:
                 if key in d:
                     d[key] += 1
                 else:
                     d[key] = 1
         remove(join(settings.STATIC_PATH, 'faces_in_current_video.txt'))
         return d
-        
+

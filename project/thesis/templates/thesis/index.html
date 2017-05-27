@@ -76,11 +76,11 @@ videojs.options.flash.swf = "{% static 'flat-ui/dist/js/vendors/video-js.swf' %}
             </div>
             {% endfor %}
             <!-- <input class="fui-upload btn btn-block btn-lg btn-primary" type="submit" value="Upload video" /> -->
-            <a class="fui-eye btn btn-block btn-lg btn-primary" 
+            <a class="fui-eye btn btn-block btn-lg btn-primary"
                onclick="myFunction(false, false)"></a>
             <a class="fui-user btn btn-block btn-lg btn-primary"
                onclick="myFunction(true, false)"></a>
-            <a class="fui-image btn btn-block btn-lg btn-primary" 
+            <a class="fui-image btn btn-block btn-lg btn-primary"
                onclick="myFunction(false, true)"></a>
 
             <script>
@@ -148,24 +148,15 @@ function myFunction(bool, objbool) {
                     <div class="modal-body">
                       <p>Objects found in the current frames</p>
                       <div class="row">
+                          {% for key, values in objects.items %}
                           <div class="col-xs-6 col-md-3">
                                 <a href="#" class="thumbnail">
-                                   <img src="{% static 'images/lena.png' %}" alt="...">
+                                    <img src="{% static 'obj-detect-frames/'%}{{ key }}" alt="...">
                                  </a>
-                                 <p>This is an object</p>
-                           </div>                          
-                           <div class="col-xs-6 col-md-3">
-                                <a href="#" class="thumbnail">
-                                   <img src="{% static 'images/lena.png' %}" alt="...">
-                                 </a>
-                                 <p>This is an object</p>
+                                 <p>Class(es): {{ values.0 }}</p>
+                                 <p>Probability: {{ values.1 }}</p>
                            </div>
-                          <div class="col-xs-6 col-md-3">
-                                <a href="#" class="thumbnail">
-                                   <img src="{% static 'images/lena.png' %}" alt="...">
-                                 </a>
-                                 <p>This is an object</p>
-                           </div>
+                           {% endfor %}
                       </div>
 
 
