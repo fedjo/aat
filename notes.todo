@@ -5,8 +5,18 @@
         - [x] First container build and install opencv. Problem with luck of space and not finding numpy
         - [x] Second container build and install the django application
 
+- [ ] Fix the HTTP API according to the document
+- [ ] Create view to upload zip with faces to recognize
+- [ ] Normalize face recognition results
+- [ ] Normalize face detection results
+- [ ] Option for bounding boxes (true/false)
+- [ ] Selective Search before object detection
+- [ ] Give the oppurtunity to train a haar cascade to recognize specifi objects
+
+
+    
+---- Not priority ----
+
 - [ ] Refactor django application using django rest framework plugin
 - [ ] Try to solve issues with py-faster rcnn
 - [ ] Embedd py-faster rcnn to the application
-- [ ] Normalize face recognition results
-- [ ] Normalize face detection results
