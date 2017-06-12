@@ -12,6 +12,8 @@
 - [ ] Option for bounding boxes (true/false)
 - [ ] Selective Search before object detection
 - [ ] Give the oppurtunity to train a haar cascade to recognize specifi objects
+- [ ] Add celery for synchronous tasks
+- [ ] Add authentication system
 - [ ] Gender classification
 - [ ] Landmark detection
 
