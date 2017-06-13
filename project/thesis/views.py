@@ -1,25 +1,20 @@
-import timeit
-import json
 from os import listdir, walk, makedirs, rmdir
 from os.path import isfile, join, exists, split
+import timeit
+import json
 import shutil
 import zipfile
 
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
-from django.http import HttpResponseRedirect
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, JsonResponse, \
+        HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 
+from utils.video import Video, create_ui_video_name
+from utils.clock import Clock
 from .forms import VideoForm
 from .forms import PostForm
 from main import App
-from utils.video import create_ui_video_name
-from utils.video import Video
-from utils.clock import Clock
-
-
-# Create your views here.
 
 
 def index(request):
@@ -134,14 +129,78 @@ def process_upload(request):
 
     return render(request, 'thesis/block.html', {'form': form})
 
+
 @csrf_exempt 
-def annotate(request):
+def example(request):
     try:
         data = json.loads(request.body)
         print data
     except:
         return HttpResponseBadRequest()
     return JsonResponse({'status': 'ok'})
+
+
+def annotate(request):
+    if request.method == 'POST':
+        if request.FILES['video']:
+            uploadedf = request.FILES['video']
+
+        elif request.POST['video']:
+            videourl = request.POST['video']
+
+        # process uploaded file
+
+
+        resp = dict()
+        meta = dict()
+        tags = dict()
+
+        resp['meta'] = meta
+        resp ['tags'] = tags
+
+        return JsonResponse(resp)
+    else:
+        return HttpResponseBadRequest
+
+
+def configure(request):
+    if request.method == 'GET':
+
+        cascade = dict()
+        recognizer = dict()
+        objdetector = dict()
+        resp = dict()
+
+    elif request.method == 'POST':
+
+        jsonconf = json.loads(request.body)
+        # Parse configuration JSON
+        # cascade, recognizer, objdetector = parse_jsonconf(jsonconf)
+
+    else:
+        return HttpResponseBadRequest
+
+    resp['cascade'] = cascade
+    resp['recognizer'] = recognizer
+    resp['objdetector'] = odjdetector
+
+    return JsonResponse(resp)
+
+
+def model(request):
+    if (request.method == 'POST' and
+        request.FILES['model']):
+
+        uploadedzip = request.FILE['model']
+        # Unzip file and parse content
+
+        people = []
+        resp = dict()
+
+        return JsonResponse(resp)
+    else:
+        return HttpResponseBadRequest
+
 
 @Clock.time
 def parse_directory(request):

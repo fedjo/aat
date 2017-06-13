@@ -5,20 +5,22 @@
         - [x] First container build and install opencv. Problem with luck of space and not finding numpy
         - [x] Second container build and install the django application
 
-- [ ] Fix the HTTP API according to the document
-- [ ] Create view to upload zip with faces to recognize
+- [X] Fix the HTTP API according to the document
+- [X] Create view to upload zip with faces to recognize
+    - [ ] Need to add logic to the views
+- [ ] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
 - [ ] Normalize face detection results
 - [ ] Option for bounding boxes (true/false)
 - [ ] Selective Search before object detection
-- [ ] Give the oppurtunity to train a haar cascade to recognize specifi objects
+- [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
 - [ ] Add celery for synchronous tasks
 - [ ] Add authentication system
 - [ ] Gender classification
 - [ ] Landmark detection
 
 
-    
+
 ---- Not priority ----
 
 - [ ] Refactor django application using django rest framework plugin
