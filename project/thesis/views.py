@@ -1,21 +1,22 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-from django.http import HttpResponseBadRequest
-from utils.video import Video
-from utils.clock import Clock
-
+import timeit
+import json
 from os import listdir, walk, makedirs, rmdir
 from os.path import isfile, join, exists, split
 import shutil
 import zipfile
 
+from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect
+from django.http import HttpResponseBadRequest
+from django.views.decorators.csrf import csrf_exempt
+
 from .forms import VideoForm
 from .forms import PostForm
 from main import App
 from utils.video import create_ui_video_name
-
-import timeit
+from utils.video import Video
+from utils.clock import Clock
 
 
 # Create your views here.
@@ -34,20 +35,26 @@ def upload_video(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
         if form.is_valid():
+
             print form.as_table()
+
             video_dir = request.POST['video_dir']
             bool_rec = request.POST['recognizer']
             obj_dec = request.POST['objdetection']
             d = {}
-            recogn_name = ''
             if bool_rec == 'true':
                 recogn_name = 'LBPH'
+            else:
+                recogn_name = ''
             app = App(video_dir, recogn_name)
+
             if True:
                 objects = app.object_detection()
+
             d = app.create_name_dict_from_file(recogn_name)
             h, ui_video_name =  split(create_ui_video_name(video_dir, recogn_name))
             print ui_video_name
+
             context = {'form' :  PostForm(), 'media': ui_video_name, 'names': d,
                         'objects': objects}
             return render(request, 'thesis/index.html', context)
@@ -66,7 +73,6 @@ def process_upload(request):
         if not form.is_valid():
             form = VideoForm()
             return render(request, 'thesis/block.html', {'form': form})
-
 
         video = request.FILES['video']
         # Handle ZIP files
@@ -103,17 +109,19 @@ def process_upload(request):
 
         if form.is_valid():
             print "OK"
-            rec = ""
             if request.POST['recognizer'] != 'No':
                 rec = form.recognizer
+            else:
+                rec = ''
             app = App(video,
                         rec,
                         request.POST['Scale'],
                         request.POST['Neighbors'],
                         request.POST['Min_X_dimension'],
                         request.POST['Min_Y_dimension']
-                            )
+                    )
             objects = app.object_detect()
+
             h, ui_video_name = split(create_ui_video_name(video, rec))
             context = { 'boldmessage' :  "Test video", 'media': ui_video_name,
                         'objects': objects}
@@ -125,6 +133,15 @@ def process_upload(request):
         form = VideoForm()
 
     return render(request, 'thesis/block.html', {'form': form})
+
+@csrf_exempt 
+def annotate(request):
+    try:
+        data = json.loads(request.body)
+        print data
+    except:
+        return HttpResponseBadRequest()
+    return JsonResponse({'status': 'ok'})
 
 @Clock.time
 def parse_directory(request):
