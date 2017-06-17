@@ -13,6 +13,6 @@ class Configuration(models.Model):
 
     recognizer_name = models.CharField(max_length=50)
 
-    objdetector_name models.CharField(max_length=50)
+    objdetector_name = models.CharField(max_length=50)
 
     manual_tags = models.CharField(max_length=50)

@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse, \
         HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 
+from .models import Configuration
 from utils.video import Video, create_ui_video_name
 from utils.clock import Clock
 from .forms import VideoForm
@@ -130,7 +131,7 @@ def process_upload(request):
     return render(request, 'thesis/block.html', {'form': form})
 
 
-@csrf_exempt 
+@csrf_exempt
 def example(request):
     try:
         data = json.loads(request.body)
@@ -144,17 +145,30 @@ def annotate(request):
     if request.method == 'POST':
         if request.FILES['video']:
             uploadedf = request.FILES['video']
+            app = App(uploadedf, recogn_name)
 
         elif request.POST['video']:
             videourl = request.POST['video']
+            app = App(videourl, recogn_name)
 
         # process uploaded file
+        if True:
+            objects_dict = app.object_detection()
+        facesno = app.create_name_dict_from_file(recogn_name)
 
+        faces = facesno.dict.keys()
+        confidenece = facesno.values()
+        objects = objects_dict.keys()
+        probabilities = objects_dict.values()
 
         resp = dict()
         meta = dict()
         tags = dict()
 
+        tags['faces'] = faces
+        tags['confidence'] = confidence
+        tags['objects'] = objects
+        tags['probabilities'] = probabilities
         resp['meta'] = meta
         resp ['tags'] = tags
 
@@ -171,6 +185,17 @@ def configure(request):
         objdetector = dict()
         resp = dict()
 
+        c = Configuration.objects.get(pk=1)
+        cascade['name'] = c.cascade_name
+        cascade['scale'] = c.cascade_scale
+        cascade['neighnors'] = c.cascade_neighbors
+        cascade['min_face_size'] = c.cascade_min_face_size
+        cascade['boxes'] = c.cascade_boxes
+
+        recognizer['name'] = c.recognizer_name
+
+        objdetector['name'] = c.objdetector_name
+
     elif request.method == 'POST':
 
         jsonconf = json.loads(request.body)
@@ -182,7 +207,7 @@ def configure(request):
 
     resp['cascade'] = cascade
     resp['recognizer'] = recognizer
-    resp['objdetector'] = odjdetector
+    resp['objdetector'] = objdetector
 
     return JsonResponse(resp)
 
