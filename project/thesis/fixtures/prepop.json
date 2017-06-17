@@ -1,0 +1,19 @@
+[
+    {
+        "model": "thesis.configuration",
+        "pk": 1,
+        "fields": {
+            "cascade_name": "haarcascade_frontalface_alt2.xml",
+            "cascade_scale": "1.1",
+            "cascade_neighbors": "5",
+            "cascade_min_face_size": "30",
+            "cascade_boxes": "yes",
+
+            "recognizer_name": "LBPH",
+            "objdetector_name": "bvlc_googlenet.caffemodel",
+            "manual_tags": ""
+        }
+
+    }
+]
+

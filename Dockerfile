@@ -1,5 +1,7 @@
 FROM opencv
 
+RUN apt-get update && apt-get install -y sqlite3
+
 ADD requirements.txt /tmp
 
 RUN pip install -r /tmp/requirements.txt
@@ -16,8 +18,8 @@ ENV PATH=/opencv_dnn:${PATH}
 
 ENV LD_LIBRARY_PATH=/lib/lib
 
-ADD project /project
+ADD project /opt/project
 
-WORKDIR /project
+WORKDIR /opt/project
 
 RUN mv static/Flat-UI static/flat-ui

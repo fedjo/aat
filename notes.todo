@@ -8,7 +8,7 @@
 - [X] Fix the HTTP API according to the document
 - [X] Create view to upload zip with faces to recognize
     - [ ] Need to add logic to the views
-- [ ] Add docker volume to store data, and fix the whole set up
+- [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
 - [ ] Normalize face detection results
 - [ ] Option for bounding boxes (true/false)
