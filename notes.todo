@@ -7,12 +7,14 @@
 
 - [X] Fix the HTTP API according to the document
 - [X] Create view to upload zip with faces to recognize
-    - [ ] Need to add logic to the views
+    - [x] Need to add logic to the views
+    - [ ] Create faces.csv  and face_label.txt from the view
+    - [ ] Test the API calls
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
 - [ ] Normalize face detection results
 - [ ] Option for bounding boxes (true/false)
-- [ ] Selective Search before object detection
+- [x] Selective Search before object detection
 - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
 - [ ] Add celery for synchronous tasks
 - [ ] Add authentication system
