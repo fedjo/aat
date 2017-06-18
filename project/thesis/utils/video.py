@@ -152,13 +152,14 @@ class Video:
             frame_with_faces = frame.copy()
             rec_start = time.time()
             for (x,y,w,h) in current_faces:
-                cv2.rectangle(frame_with_faces, (x,y), (x+w, y+h), (0,0,255),2)
+                cv2.rectangle(frame_with_faces, (x,y), (x+w, y+h), (0,0,255),4)
                 # Predict possible faces on the original frame
                 if useRecognition:
                     faceName = self.recognizer.predictFaces(gray, (x,y,w,h))
                     if faceName:
+                        cv2.rectangle(frame_with_faces, (x, y-15), (x+(w/2),y) (0,0,255), -1)
                         cv2.putText(frame_with_faces, faceName, (x, y-10),
-                                    cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 3)
+                                    cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), 1)
             rec_end = time.time()
             recognition_time += rec_end - rec_start
 

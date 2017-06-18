@@ -1,14 +1,17 @@
 from os import listdir, walk, makedirs, rmdir
 from os.path import isfile, join, exists, split
+import os
 import timeit
 import json
 import shutil
 import zipfile
+from random import randint
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, \
         HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 from .models import Configuration
 from utils.video import Video, create_ui_video_name
@@ -177,6 +180,7 @@ def annotate(request):
         return HttpResponseBadRequest
 
 
+@csrf_exempt
 def configure(request):
     if request.method == 'GET':
 
@@ -199,6 +203,23 @@ def configure(request):
     elif request.method == 'POST':
 
         jsonconf = json.loads(request.body)
+        cascade = jsonconf['cascade']
+        recognizer = jsonconfp['recognizer']
+        objdetector = jsonconf['objdetector']
+
+        c = Configuration()
+        c.cascade_name = cascade['name']
+        c.cascade_scale = cascade['scale']
+        c.cascade_neighbors = cascade['neighbors']
+        c.cascade_min_face_size = cascade['min_face_size']
+        c.cascade_boxes = cascade['boxes']
+
+        c.recognizer_name = recognizer
+        c.objdetector_name = objdetector
+        c.manual_tags = jsonconf['manual_tags']
+
+        c.save()
+
         # Parse configuration JSON
         # cascade, recognizer, objdetector = parse_jsonconf(jsonconf)
 
@@ -212,15 +233,41 @@ def configure(request):
     return JsonResponse(resp)
 
 
+@csrf_exempt
 def model(request):
     if (request.method == 'POST' and
         request.FILES['model']):
 
-        uploadedzip = request.FILE['model']
+        uploadedzip = request.FILES['model']
+        uploadedname = request.FILES['model'].name
         # Unzip file and parse content
+        zippath = join(settings.STATIC_PATH, 'model.zip')
+        with open(zippath, 'wb+') as destination:
+            for chunk in uploadedzip.chunks():
+                destination.write(chunk)
+
+        if not zipfile.is_zipfile(zippath):
+            return HttpResponseBadRequest("The is not a zip file")
+
+        extractdir = join(settings.STATIC_PATH, 'faces', os.path.splitext(uploadedname))
+        if exists(extractdir):
+            extractdir += "_" + str(randint(0,9))
+        makedirs(extractdir)
+
+        zip_ref = zipfile.ZipFile(zippath, 'r')
+        zip_ref.extractall(extractdir)
+        zip_ref.close()
+        os.remove(zippath)
+
+        # TODO
+        # Create faces.csv and face_labels.txt file
 
         people = []
+        for facename in listdir(extractdir):
+            people.append(facename)
+
         resp = dict()
+        resp['people'] = people
 
         return JsonResponse(resp)
     else:

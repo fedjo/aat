@@ -1,0 +1,12 @@
+{
+	"cascade": {
+		"name": "mycascade",
+		"scale": "1.5",
+		"neighbors": "3",
+		"min_face_size": "",
+		"boxes": "yes"
+	},
+	"recognizer": "myrec",
+	"objdetector": "myobj",
+	"manual_tags": "test"
+}
