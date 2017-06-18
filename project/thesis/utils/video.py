@@ -154,12 +154,16 @@ class Video:
             for (x,y,w,h) in current_faces:
                 cv2.rectangle(frame_with_faces, (x,y), (x+w, y+h), (0,0,255),4)
                 # Predict possible faces on the original frame
+                faceName = 'person'
                 if useRecognition:
                     faceName = self.recognizer.predictFaces(gray, (x,y,w,h))
-                    if faceName:
-                        cv2.rectangle(frame_with_faces, (x, y-15), (x+(w/2),y) (0,0,255), -1)
-                        cv2.putText(frame_with_faces, faceName, (x, y-10),
-                                    cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), 1)
+                    if not faceName:
+                        faceName = 'person'
+                size = cv2.getTextSize(faceName, cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
+                cv2.rectangle(frame_with_faces, (x, y-size[1]-3), (x+size[0]+4,y+3), (0,0,255), -1)
+                cv2.putText(frame_with_faces, faceName, (x, y-2),
+                            cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+
             rec_end = time.time()
             recognition_time += rec_end - rec_start
 
@@ -201,8 +205,8 @@ class Video:
         with open(path, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=';')
             for row in reader:
-                #print img_path+str(row[0])
-                self.face_labelsDict[int(row[1])] = str(row[0]).split('/')[1]
+                self.face_labelsDict[int(row[1])] = str(row[0]).split('/')[2]
+                print(img_path + str(row[0]))
                 image = cv2.imread(img_path + str(row[0]))
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 if recogn == 'LBPH':
