@@ -23,3 +23,5 @@ ADD project /opt/project
 WORKDIR /opt/project
 
 RUN mv static/Flat-UI static/flat-ui
+
+RUN python manage.py loaddata prepop

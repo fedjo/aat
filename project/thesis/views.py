@@ -261,6 +261,8 @@ def model(request):
 
         # TODO
         # Create faces.csv and face_labels.txt file
+        create_csv(extractdir, ';')
+
 
         people = []
         for facename in listdir(extractdir):
@@ -272,6 +274,21 @@ def model(request):
         return JsonResponse(resp)
     else:
         return HttpResponseBadRequest
+
+
+def create_csv(path, separator):
+    label = 0
+    topdir, folder = split(path)
+    csvpath = join(topdir, folder+'.csv')
+    with open(csvpath, 'wb') as csvfile:
+        face_writer = csv.writer(csvfile, delimeter=separator)
+        for dirname, dirnames, filenames in os.walk(path):
+            for subdirname in dirnames:
+                subject_path = join(dirname, subdirname)
+                for filename in listdir(subject_path):
+                    abs_path = "%s/%s" % (subject_path, filename)
+                    face_writer.writerow([abs_path, label])
+                label = label + 1
 
 
 @Clock.time
