@@ -39,7 +39,7 @@ RUN pip install numpy
 #RUN mkvirtualenv cv3
 
 # Set environmental variables.
-ENV DJANGO_SETTINGS_MODULE=opencvFaceRec.settings \
+ENV DJANGO_SETTINGS_MODULE=project.settings \
     FACEREC_CONFIG=/facerec/docker/base/config.py \
     FACEREC_DIR=/facerec \
     FACEREC_APP_DIR=/FACEREC/project \
@@ -64,7 +64,7 @@ COPY . /facerec
 RUN ln -s $FACEREC_DIR/docker/base/ctl.sh /usr/local/bin/facerec-ctl
 
 # Switch working directory to source code.
-WORKDIR /facerec
+WORKDIR $FACEREC_APP_DIR
 
 # Define volumes.
 VOLUME ["$FACEREC_MEDIA_DIR", "$FACEREC_CACHE_DIR"]
@@ -83,7 +83,7 @@ RUN cd opencv && \
 PYTHON2_NUMPY_INCLUDE_DIRS=/usr/local/lib/python2.7/dist-packages/numpy/core/include \
     -D INSTALL_C_EXAMPLES=OFF \
     -D INSTALL_PYTHON_EXAMPLES=OFF \
-    -D OPENCV_EXTRA_MODULES_PATH=/facerec/opencv_contrib/modules \
+    -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
     -D BUILD_EXAMPLES=OFF .. && \
     make -j8
 

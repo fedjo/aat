@@ -1,0 +1,7 @@
+FROM registry.advantis.io/tomotech/tomotech-web:latest
+
+ADD entry.sh /tomotech-web/docker/dev/entry.sh
+
+VOLUME $TOMOTECH_APP_DIR/static
+
+ENTRYPOINT ["/tomotech-web/docker/dev/entry.sh"]

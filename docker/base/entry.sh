@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -ex
+
+chown -R $FACEREC_USER:$FACEREC_GROUP $FACEREC_MEDIA_DIR $FACEREC_CACHE_DIR
+
+exec "$@"
