@@ -4,7 +4,7 @@ ADD requirements.txt /tmp
 
 RUN pip install -r /tmp/requirements.txt
 
-RUN pip install uwsgi
+RUN pip install uwsgi celery
 
 # Add source code
 COPY docker /facerec/docker
