@@ -63,11 +63,13 @@ fi
 DEPS_IMG="opencv:$TAG"
 WEB_IMG="producer:$TAG"
 DEV_IMG="producer/dev:$TAG"
+NGINX_IMG="local_nginx:$TAG"
 
 log "Will build images"
 log "deps:              $DEPS_IMG"
 log "web:               $WEB_IMG"
 log "dev:               $DEV_IMG"
+log "nginx:             $NGINX_IMG"
 log
 log
 
@@ -103,10 +105,10 @@ log
 log "Building nginx image with static files"
 log
 set -x
-docker run --rm \
-    -v $DIR/docker/nginx/static:/tomotech-web/tomotech/web/static \
-    $WEB_IMG \
-    /tomotech-web/tomotech/web/manage.py collectstatic --noinput
+#docker run --rm \
+    #-v $DIR/docker/nginx/static:/facerec/project/static \
+    #$WEB_IMG \
+    #/facerec/project/manage.py collectstatic --noinput
 docker build $BUILD_ARGS -t $NGINX_IMG $DIR/docker/nginx
 docker run --rm -v $DIR/docker/nginx/:/mnt/nginx $WEB_IMG \
     rm -rf /mnt/nginx/static

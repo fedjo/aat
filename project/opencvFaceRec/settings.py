@@ -120,11 +120,20 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Media files (uploads and generated files stored in models)
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'data/')
+
+
+# Tomotech cache directory
+
+CACHE_ROOT = os.path.join(BASE_DIR, 'cache/')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 STATIC_PATH = os.path.join(BASE_DIR,'static')
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATICFILES_DIRS = (
         STATIC_PATH,
         )

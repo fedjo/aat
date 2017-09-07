@@ -1,27 +1,45 @@
 FROM opencv
 
-RUN apt-get update && apt-get install -y sqlite3
-
 ADD requirements.txt /tmp
 
 RUN pip install -r /tmp/requirements.txt
 
-RUN cp /lib/lib/python2.7/dist-packages/cv2.so /usr/lib/python2.7/dist-packages
+RUN pip install uwsgi
 
-ADD opencv_dnn /opencv_dnn
+# Add source code
+COPY docker /facerec/docker
 
-WORKDIR /opencv_dnn
+COPY project /facerec/project
 
-RUN make
+# Set environmental variables.
+ENV DJANGO_SETTINGS_MODULE=opencvFaceRec.settings \
+    FACEREC_CONFIG=/facerec/docker/base/config.py \
+    FACEREC_DIR=/facerec \
+    FACEREC_APP_DIR=/facerec/project \
+    FACEREC_MEDIA_DIR=/data/media \
+    FACEREC_CACHE_DIR=/data/cache \
+    UWSGI_HTTP_SOCKET=0.0.0.0:8000 \
+    UWSGI_PROCESSES=4 \
+    CELERY_PROCESSES=4 \
+    FACEREC_USER=facerec \
+    FACEREC_GROUP=facerec \
+    HOME=/home/facerec
 
-ENV PATH=/opencv_dnn:${PATH}
+# Create non root user and groups.
+RUN set -x && \
+    groupadd --system --gid 1000 $FACEREC_GROUP && \
+    useradd --system --gid $FACEREC_GROUP --uid 1000 -m $FACEREC_USER
 
-ENV LD_LIBRARY_PATH=/lib/lib
+# Rename Flat-UI folder
+RUN mv $FACEREC_APP_DIR/static/Flat-UI $FACEREC_APP_DIR/static/flat-ui
 
-ADD project /opt/project
+# Run link to brainance-ctl.
+RUN ln -s $FACEREC_DIR/docker/base/ctl.sh /usr/local/bin/facerec-ctl
 
-WORKDIR /opt/project
+# Define volumes.
+VOLUME ["$FACEREC_MEDIA_DIR", "$FACEREC_CACHE_DIR"]
 
-RUN mv static/Flat-UI static/flat-ui
+# Define entrypoint.
+ENTRYPOINT ["/facerec/docker/base/entry.sh"]
 
 #RUN python manage.py loaddata prepop

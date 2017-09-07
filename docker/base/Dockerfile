@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install --fix-missing -y \
     build-essential \
     cmake \
     libffi6 \
-    pkg-config
+    pkg-config \
+    sqlite3
 
 RUN apt-get install -y \
     libjpeg8-dev \
@@ -38,45 +39,21 @@ RUN pip install numpy
 
 #RUN mkvirtualenv cv3
 
-# Set environmental variables.
-ENV DJANGO_SETTINGS_MODULE=opencvFaceRec.settings \
-    FACEREC_CONFIG=/facerec/docker/base/config.py \
-    FACEREC_DIR=/facerec \
-    FACEREC_APP_DIR=/FACEREC/project \
-    FACEREC_MEDIA_DIR=/data/media \
-    FACEREC_CACHE_DIR=/data/cache \
-    UWSGI_HTTP_SOCKET=0.0.0.0:8000 \
-    UWSGI_PROCESSES=4 \
-    CELERY_PROCESSES=4 \
-    FACEREC_USER=facerec \
-    FACEREC_GROUP=facerec \
-    HOME=/home/facerec
+# Add source code of OpenCV
+COPY opencv/ /facerec/opencv
 
-# Create non root user and groups.
-RUN set -x && \
-    groupadd --system --gid 1000 $FACEREC_GROUP && \
-    useradd --system --gid $FACEREC_GROUP --uid 1000 -m $FACEREC_USER
-
-# Add source code.
-COPY . /facerec
-
-# Run link to brainance-ctl.
-RUN ln -s $FACEREC_DIR/docker/base/ctl.sh /usr/local/bin/facerec-ctl
+# Add source code of OpenCV contrib
+COPY opencv_contrib /facerec/opencv_contrib
 
 # Switch working directory to source code.
 WORKDIR /facerec
 
-# Define volumes.
-VOLUME ["$FACEREC_MEDIA_DIR", "$FACEREC_CACHE_DIR"]
-
-# Define entrypoint.
-ENTRYPOINT ["/facerec/docker/base/entry.sh"]
-
+# Build and install OpenCV
 RUN cd opencv && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE \
-    -D CMAKE_INSTALL_PREFIX=/lib \
+#    -D CMAKE_INSTALL_PREFIX=/lib \
     -D PYTHON2_EXECUTABLE=/usr/bin/python2.7 \
     -D PYTHON_INCLUDE_DIR=/usr/include/python2.7 \
     -D \
@@ -90,3 +67,17 @@ PYTHON2_NUMPY_INCLUDE_DIRS=/usr/local/lib/python2.7/dist-packages/numpy/core/inc
 RUN cd opencv/build && \
     make install && \
     ldconfig
+
+RUN cp /usr/local/lib/python2.7/dist-packages/cv2.so /usr/lib/python2.7/dist-packages
+
+# Add source code of opencv_dnn
+ADD opencv_dnn /facerec/opencv_dnn
+
+WORKDIR /facerec/opencv_dnn
+
+RUN make
+
+ENV PATH=/opencv_dnn:${PATH}
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
+

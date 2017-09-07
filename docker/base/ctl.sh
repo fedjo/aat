@@ -31,7 +31,7 @@ devinit() {
 run_uwsgi() {
     set -x
     exec uwsgi \
-        --module project.wsgi \
+        --module opencvFaceRec.wsgi \
         --chdir $FACEREC_APP_DIR \
         --http-socket $UWSGI_HTTP_SOCKET \
         --master \

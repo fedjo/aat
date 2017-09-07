@@ -2,17 +2,12 @@
 
 set -ex
 
-$TOMOTECH_DIR/docker/base/entry.sh
+$FACEREC_DIR/docker/base/entry.sh
 
-if ! diff -q /tmp/lib-requirements.txt $TOMOTECH_DIR/tomotech-lib/requirements.txt; then
-    echo "Pip installing $TOMOTECH_DIR/tomotech-lib"
-    pip install -r $TOMOTECH_DIR/tomotech-lib/requirements.txt
-    pip install -e $TOMOTECH_DIR/tomotech-lib
-fi
-if ! diff -q /tmp/web-requirements.txt $TOMOTECH_DIR/requirements.txt; then
-    echo "Pip installing $TOMOTECH_DIR"
-    pip install -r $TOMOTECH_DIR/requirements.txt
-    pip install -e $TOMOTECH_DIR
+if ! diff -q /tmp/requirements.txt $FACEREC_DIR/requirements.txt; then
+    echo "Pip installing $FACEREC_DIR"
+    pip install -r $FACEREC_DIR/requirements.txt
+    pip install -e $FACEREC_DIR
 fi
 
 set +x
