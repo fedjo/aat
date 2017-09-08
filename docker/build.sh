@@ -105,10 +105,10 @@ log
 log "Building nginx image with static files"
 log
 set -x
-#docker run --rm \
-    #-v $DIR/docker/nginx/static:/facerec/project/static \
-    #$WEB_IMG \
-    #/facerec/project/manage.py collectstatic --noinput
+docker run --rm \
+    -v $DIR/docker/nginx/static:/facerec/project/static \
+    $WEB_IMG \
+    /facerec/project/manage.py collectstatic --noinput
 docker build $BUILD_ARGS -t $NGINX_IMG $DIR/docker/nginx
 docker run --rm -v $DIR/docker/nginx/:/mnt/nginx $WEB_IMG \
     rm -rf /mnt/nginx/static

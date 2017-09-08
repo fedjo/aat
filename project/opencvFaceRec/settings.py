@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
+import sys
+import glob
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'revproxy',
     'thesis'
 ]
 
@@ -131,9 +134,47 @@ CACHE_ROOT = os.path.join(BASE_DIR, 'cache/')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
-STATIC_PATH = os.path.join(BASE_DIR,'static')
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
-STATICFILES_DIRS = (
-        STATIC_PATH,
-        )
+#STATICFILES_DIRS = (
+        #os.path.join(BASE_DIR, 'static'),
+        #)
+
+# Celery configuration
+
+CELERY_SETTINGS = {
+    'BROKER_URL': 'amqp://guest@127.0.0.1/',
+    'CELERYD_CONCURRENCY': 4,
+    'CELERY_RESULT_BACKEND': 'amqp',
+    # 'CELERY_RESULT_SERIALIZER': 'json',
+    'CELERY_TASK_SERIALIZER': 'json',
+    'CELERYD_PREFETCH_MULTIPLIER': 1,
+    # 'CELERYD_MAX_TASKS_PER_CHILD': 1,
+    'CELERYD_TASK_TIME_LIMIT': 60 * 10,
+    'CELERYD_TASK_SOFT_TIME_LIMIT': 60 * 8,
+    #'CELERY_ALWAYS_EAGER': True,
+}
+
+# Override configuration with files that extend this one in local_settings/
+
+def get_conf_files():
+    config = os.getenv('FACEREC_CONFIG')
+    files = []
+    if config:
+        if not os.path.exists(config):
+            raise Exception("Env var FACEREC_CONFIG points to '%s', "
+                            "but path doesn't exist." % config)
+    else:
+        config = os.path.join(BASE_DIR, 'conf.d')
+    if os.path.isdir(config):
+        files = glob.glob(os.path.join(config, '[a-zA-Z0-9]*.py'))
+    elif os.path.isfile(config):
+        files = [config]
+    else:
+        files = []
+    print >> sys.stderr, "Will load configuration from files:", files
+    return files
+
+print >> sys.stderr, "Will execfile now!"
+map(execfile, get_conf_files())
+
