@@ -25,7 +25,8 @@ def index(request):
     if request.method == 'GET':
         form = PostForm()
         context = { 'boldmessage' :  'Hello, this is the index page',
-                    'form' : form
+                    'form' : form,
+                    'media':'' 
                 }
         return render(request, 'thesis/index.html', context)
 

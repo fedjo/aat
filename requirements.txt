@@ -1,2 +1,3 @@
 django
 numpy
+https://github.com/TracyWebTech/django-revproxy/archive/master.zip

@@ -107,7 +107,7 @@ class Video:
                 # Get the current frame in grayscale
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             else:
-                f = open(settings.BASE_DIR + '/timelapse.log', 'a')
+                f = open(join(settings.MEDIA_ROOT, 'timelapse.log'), 'a')
                 f.write('---Detection time---\n')
                 f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
                 f.write('---Recognition time---\n')

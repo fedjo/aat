@@ -1,6 +1,7 @@
 from django.conf import settings
 import time
 import timeit
+import os
 
 class Clock:
 
@@ -11,7 +12,7 @@ class Clock:
 	    result = func(*args, **kwargs)
 	    t_end = time.time()
 
-	    f = open(settings.BASE_DIR + '/timelapse.log', 'a')
+	    f = open(os.path.join(settings.MEDIA_ROOT, 'timelapse.log'), 'a')
 	    f.write('---Decorator time---\n')
 	    f.write('%r() %2.2f sec\n' % (func.__name__,  t_end-t_start))
 	    f.close()
@@ -30,7 +31,7 @@ class Clock:
 		return wrapped
 
 	    wrapped = wrapper(func)
-	    f = open(settings.BASE_DIR + '/timelapse.log', 'a')
+	    f = open(os.path.join(settings.MEDIA_ROOT, 'timelapse.log'), 'a')
 	    f.write('---Decorator time-IT---\n')
 	    f.write('%r() %2.2f sec\n' % (func.__name__, timeit.timeit(wrapped)))
 	    f.close()
