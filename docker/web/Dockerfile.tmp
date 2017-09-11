@@ -11,6 +11,8 @@ COPY docker /facerec/docker
 
 COPY project /facerec/project
 
+WORKDIR /facerec/project
+
 # Set environmental variables.
 ENV DJANGO_SETTINGS_MODULE=opencvFaceRec.settings \
     FACEREC_CONFIG=/facerec/docker/base/config.py \
@@ -41,5 +43,3 @@ VOLUME ["$FACEREC_MEDIA_DIR", "$FACEREC_CACHE_DIR"]
 
 # Define entrypoint.
 ENTRYPOINT ["/facerec/docker/base/entry.sh"]
-
-#RUN python manage.py loaddata prepop

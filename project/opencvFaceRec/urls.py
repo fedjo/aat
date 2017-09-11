@@ -22,10 +22,11 @@ from revproxy.views import ProxyView
 
 class AdminProxyView(ProxyView):
     def dispatch(self, request, path):
-        user = request.user
-        if user.is_authenticated and user.is_active and user.is_superuser:
-            return super(AdminProxyView, self).dispatch(request, path)
-        return HttpResponse("Not authorized as admin.", status=401)
+        # user = request.user
+        # if user.is_authenticated and user.is_active and user.is_superuser:
+            # return super(AdminProxyView, self).dispatch(request, path)
+        #return HttpResponse("Not authorized as admin.", status=401)
+        return super(AdminProxyView, self).dispatch(request, path)
 
 
 class RabbitmqAdminProxyView(AdminProxyView):

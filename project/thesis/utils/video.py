@@ -28,7 +28,7 @@ def create_ui_video_name(filename, recognizer):
 
     head, tail = split(filepath)
     name = tail.split('.')[0]
-    return join(settings.STATIC_PATH, name + '-' + recognizer + '.mp4')
+    return join(settings.STATIC_ROOT, name + '-' + recognizer + '.mp4')
 
 
 class Video:
@@ -49,13 +49,13 @@ class Video:
         # Dictionary holding the label as a key and name of the person as value
         self.face_labelsDict = {}
         # Classifiers for detectMultiScale() face detector
-        self.face_cascade = cv2.CascadeClassifier(join(settings.STATIC_PATH, \
+        self.face_cascade = cv2.CascadeClassifier(join(settings.STATIC_ROOT, \
             'haar_cascades', 'haarcascade_frontalface_alt2.xml'))
-        self.profile_cascade = cv2.CascadeClassifier(join(settings.STATIC_PATH, \
+        self.profile_cascade = cv2.CascadeClassifier(join(settings.STATIC_ROOT, \
             'haar_cascades', 'haarcascade_profileface.xml'))
 
         # optional implementation to use all/selected haar cascades
-        cascadesdir = join(settings.STATIC_PATH, 'haar_cascades')
+        cascadesdir = join(settings.STATIC_ROOT, 'haar_cascades')
         self.haarcascades = \
                 [ cv2.CascadeClassifier(join(cascadesdir, x)) for x in listdir(cascadesdir) if x in cascades ]
 
@@ -97,7 +97,7 @@ class Video:
         detection_time = 0
         recognition_time = 0
         i = 0
-        frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
+        frames_temp_path = join(settings.STATIC_ROOT, 'obj-detect-frames')
         if exists(frames_temp_path):
             shutil.rmtree(frames_temp_path)
         mkdir(frames_temp_path)
@@ -180,7 +180,7 @@ class Video:
 
     @Clock.time
     def perform_obj_detection(self):
-        frames_temp_path = join(settings.STATIC_PATH, 'obj-detect-frames')
+        frames_temp_path = join(settings.STATIC_ROOT, 'obj-detect-frames')
         cmd = ['objdetect']
         detectd_frames = dict()
         for frame_name in listdir(frames_temp_path):
@@ -200,8 +200,8 @@ class Video:
 
 
     def read_csv_file(self, recogn, path=""):
-        path = settings.STATIC_PATH + "/faces.csv"
-        img_path = settings.STATIC_PATH + "/"
+        path = settings.STATIC_ROOT + "/faces.csv"
+        img_path = settings.STATIC_ROOT + "/"
         with open(path, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=';')
             for row in reader:

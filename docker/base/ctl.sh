@@ -8,6 +8,7 @@ _preinit() {
 
 _postinit() {
     #$FACEREC_APP_DIR/manage.py addexam 'Demo Exam' clinical_fmri.zip -s3
+    $FACEREC_APP_DIR/manage.py loaddata prepop
     echo ""
 }
 
@@ -25,7 +26,7 @@ devinit() {
     set -x
     _preinit
     $FACEREC_APP_DIR/manage.py collectstatic --no-input
-    #$FACEREC_APP_DIR/manage.py autosuperuser
+    $FACEREC_APP_DIR/manage.py autosuperuser
     _postinit
 }
 

@@ -27,7 +27,7 @@ RUN apt-get install -y \
     libswscale-dev \
     libv4l-dev
 
-RUN pip install numpy 
+RUN pip install numpy
     #django \
     #cffi \
     #virtualenv \
@@ -77,7 +77,7 @@ WORKDIR /facerec/opencv_dnn
 
 RUN make
 
-ENV PATH=/opencv_dnn:${PATH}
+ENV PATH=/facerec/opencv_dnn:${PATH}
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
 

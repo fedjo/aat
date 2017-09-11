@@ -16,7 +16,8 @@
 - [ ] Option for bounding boxes (true/false)
 - [x] Selective Search before object detection
 - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
-- [ ] Add celery for synchronous tasks
+- [x] Add celery for asynchronous tasks
+    - [ ] Create tasks for face detection/ face recognition/ object detection
 - [ ] Add authentication system
 - [ ] Gender classification
 - [ ] Landmark detection

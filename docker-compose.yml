@@ -17,6 +17,7 @@ services:
       - cache:/data/cache:rw
       - static:/facerec/project/static:rw
       - ./project/db:/data/db:rw
+      - /media/lebowski/Maxtor1/thesis_video/:/thesis_video:rw
   celery:
     extends: init
     command: facerec-ctl celery

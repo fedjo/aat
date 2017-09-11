@@ -26,7 +26,7 @@ def index(request):
         form = PostForm()
         context = { 'boldmessage' :  'Hello, this is the index page',
                     'form' : form,
-                    'media':'' 
+                    'media':''
                 }
         return render(request, 'thesis/index.html', context)
 
@@ -188,7 +188,6 @@ def configure(request):
         cascade = dict()
         recognizer = dict()
         objdetector = dict()
-        resp = dict()
 
         c = Configuration.objects.get(pk=1)
         cascade['name'] = c.cascade_name
@@ -205,7 +204,7 @@ def configure(request):
 
         jsonconf = json.loads(request.body)
         cascade = jsonconf['cascade']
-        recognizer = jsonconfp['recognizer']
+        recognizer = jsonconf['recognizer']
         objdetector = jsonconf['objdetector']
 
         c = Configuration()
@@ -227,6 +226,7 @@ def configure(request):
     else:
         return HttpResponseBadRequest
 
+    resp = dict()
     resp['cascade'] = cascade
     resp['recognizer'] = recognizer
     resp['objdetector'] = objdetector
@@ -242,7 +242,7 @@ def model(request):
         uploadedzip = request.FILES['model']
         uploadedname = request.FILES['model'].name
         # Unzip file and parse content
-        zippath = join(settings.STATIC_PATH, 'model.zip')
+        zippath = join(settings.MEDIA_ROOT, 'model.zip')
         with open(zippath, 'wb+') as destination:
             for chunk in uploadedzip.chunks():
                 destination.write(chunk)
@@ -250,7 +250,7 @@ def model(request):
         if not zipfile.is_zipfile(zippath):
             return HttpResponseBadRequest("The is not a zip file")
 
-        extractdir = join(settings.STATIC_PATH, 'faces', os.path.splitext(uploadedname))
+        extractdir = join(settings.MEDIA_ROOT, 'faces', os.path.splitext(uploadedname))
         if exists(extractdir):
             extractdir += "_" + str(randint(0,9))
         makedirs(extractdir)
