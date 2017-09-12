@@ -1,11 +1,11 @@
-from os import listdir, walk, makedirs, rmdir
-from os.path import isfile, join, exists, split
 import os
-import timeit
+import csv
 import json
 import shutil
 import zipfile
+import logging
 from random import randint
+
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, \
@@ -18,89 +18,104 @@ from utils.video import Video, create_ui_video_name
 from utils.clock import Clock
 from .forms import VideoForm
 from .forms import PostForm
-from main import App
+
+
+log = logging.getLogger(__name__)
 
 
 def index(request):
     if request.method == 'GET':
         form = PostForm()
-        context = { 'boldmessage' :  'Hello, this is the index page',
-                    'form' : form,
-                    'media':''
-                }
+        context = {'boldmessage':  'Hello, this is the index page',
+                   'form': form,
+                   'media': ''}
         return render(request, 'thesis/index.html', context)
 
+
 @Clock.time
-def upload_video(request):
+def default_detection(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
         if form.is_valid():
+            log.debug(form.as_table())
 
-            print form.as_table()
+            video_path = request.POST['video_dir']
+            has_recognition = request.POST['recognizer']
+            has_detection = request.POST['objdetection']
 
-            video_dir = request.POST['video_dir']
-            bool_rec = request.POST['recognizer']
-            obj_dec = request.POST['objdetection']
-            d = {}
-            if bool_rec == 'true':
-                recogn_name = 'LBPH'
+            log.debug('Video path is {} and recognizer {}'
+                      .format(video_path, recognizer_name))
+            log.debug("The values provided are: scale {}, neighbors {},
+                      min x dimension {}, min y dimension {}"
+                      .format(1.3, 3, 30, 30))
+
+            d = dict()
+            video = Video(video_path)
+            if has_recognition == 'true':
+                recognizer_name = 'LBPH'
+                video.setRecognizer(recognizer_name)
+                video.detectFaces(scale=1.3, neighbors=3, Min_X_dimension=30,
+                                  Min_Y_dimension=30, useRecognition=True)
+                d = create_name_dict_from_file(recognizer_name)
             else:
-                recogn_name = ''
-            app = App(video_dir, recogn_name)
+                recognizer_name = ''
+                video.detectFaces(scale=1.3, neighbors=3, Min_X_dimension=30,
+                                  Min_Y_dimension=30, useRecognition=False)
 
-            if True:
-                objects = app.object_detection()
+            if has_detection:
+                objects = video.perform_obj_detection()
 
-            d = app.create_name_dict_from_file(recogn_name)
-            h, ui_video_name =  split(create_ui_video_name(video_dir, recogn_name))
-            print ui_video_name
+            h, ui_video_name = os.path.split(
+                    create_ui_video_name(video_path, recognizer_name))
+            log.debug(ui_video_name)
 
-            context = {'form' :  PostForm(), 'media': ui_video_name, 'names': d,
-                        'objects': objects}
+            context = {'form':  PostForm(), 'media': ui_video_name, 'names': d,
+                       'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
-            print form.errors.as_data()
+            log.error(form.errors.as_data())
             return HttpResponseBadRequest("Form is not valid")
     else:
         vidForm = VideoForm()
-        context = { 'form' : vidForm }
+        context = {'form': vidForm}
         return render(request, 'thesis/block.html', context)
 
+
 @Clock.time
-def process_upload(request):
+def complex_detection(request):
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
         if not form.is_valid():
             form = VideoForm()
             return render(request, 'thesis/block.html', {'form': form})
 
-        video = request.FILES['video']
+        video_file = request.FILES['video']
         # Handle ZIP files
         if request.POST['iszip'] == 'Yes':
-            if not zipfile.is_zipfile(video.temporary_file_path()):
+            if not zipfile.is_zipfile(video_file.temporary_file_path()):
                 return HttpResponseBadRequest("The is not a zip file")
 
             tmp_dir = '/tmp/video/'
-            if not exists(tmp_dir):
-                makedirs(tmp_dir)
+            if not os.path.exists(tmp_dir):
+                os.makedirs(tmp_dir)
 
-            zip_ref = zipfile.ZipFile(video.temporary_file_path(), 'r')
+            zip_ref = zipfile.ZipFile(video_file.temporary_file_path(), 'r')
             zip_ref.extractall(tmp_dir)
             zip_ref.close()
 
-            files = listdir(tmp_dir)
+            files = os.listdir(tmp_dir)
             if len(files) == 1:
                 if '.mp4' in files[0]:
-                    video = join(tmp_dir, files[0])
+                    video_file = os.path.join(tmp_dir, files[0])
                 else:
                     return HttpResponseBadRequest("The zip file you uploaded does not \
                             contain any video in .mp4 format")
             else:
-                video = ""
+                video_file = ""
                 for f in files:
                     if '.mp4' in f:
-                        video = join(tmp_dir, f)
-                if video == "":
+                        video_file = os.path.join(tmp_dir, f)
+                if video_file == "":
                     return HttpResponseBadRequest("The zip file you uploaded does not \
                             contain any video in .mp4 format")
 
@@ -108,26 +123,40 @@ def process_upload(request):
         # #################
 
         if form.is_valid():
-            print "OK"
-            if request.POST['recognizer'] != 'No':
-                rec = form.recognizer
-            else:
-                rec = ''
-            app = App(video,
-                        rec,
-                        request.POST['Scale'],
-                        request.POST['Neighbors'],
-                        request.POST['Min_X_dimension'],
-                        request.POST['Min_Y_dimension']
-                    )
-            objects = app.object_detect()
+            log.debug("Form is valid!")
 
-            h, ui_video_name = split(create_ui_video_name(video, rec))
-            context = { 'boldmessage' :  "Test video", 'media': ui_video_name,
-                        'objects': objects}
+            d = dict()
+            if isinstance(video_file, basestring):
+                video_path = video_file
+            else:
+                video_path = video_path.temporary_file_path()
+            video = Video(video_path)
+            if request.POST['recognizer'] != 'No':
+                recognizer_name = form.recognizer
+                video.setRecognizer(recognizer_name)
+                video.detectFaces(scale=request.POST['Scale'],
+                                  neighbors=request.POST['Neighbors'],
+                                  Min_X_dimension=request.POST['Min_X_dimension'],
+                                  Min_Y_dimension=request.POST['Min_Y_dimension'],
+                                  useRecognition=True)
+                d = create_name_dict_from_file(recognizer_name)
+            else:
+                recognizer_name = ''
+                video.detectFaces(scale=request.POST['Scale'],
+                                  neighbors=request.POST['Neighbors'],
+                                  Min_X_dimension=request.POST['Min_X_dimension'],
+                                  Min_Y_dimension=request.POST['Min_Y_dimension'],
+                                  useRecognition=False)
+
+            objects = video.perform_obj_detection()
+
+            h, ui_video_name = os.path.split(
+                    create_ui_video_name(video_path, recognizer_name))
+            context = {'boldmessage':  "Test video", 'media': ui_video_name,
+                       'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
-            print form.errors.as_table()
+            log.debug(form.errors.as_table())
             form = VideoForm()
     else:
         form = VideoForm()
@@ -136,30 +165,42 @@ def process_upload(request):
 
 
 @csrf_exempt
-def example(request):
-    try:
-        data = json.loads(request.body)
-        print data
-    except:
-        return HttpResponseBadRequest()
-    return JsonResponse({'status': 'ok'})
-
-
 def annotate(request):
     if request.method == 'POST':
         if request.FILES['video']:
-            uploadedf = request.FILES['video']
-            app = App(uploadedf, recogn_name)
+            video_file = request.FILES['video_file']
+            video_path = video_file.temporary_file_path()
 
         elif request.POST['video']:
-            videourl = request.POST['video']
-            app = App(videourl, recogn_name)
+            # Actually path here is a url which
+            # needs to be resolved`
+            video_url = request.POST['video']
+            #TODO
+            # Resolve video_url and assign it
+            # video_path
+            video_path = ''
+
+        video = Video(video_path)
+        recognizer_name = request.POST['recognizer']
+        if not recognizer_name:
+            recognizer_name = 'LBPH'
+        video.setRecognizer(recognizer_name)
+        video.detectFaces(scale=1.3,
+                          neighbors=3,
+                          Min_X_dimension=30,
+                          Min_Y_dimension=30,
+                          useRecognition=True)
+        #video.detectFaces(scale=request.POST['Scale'],
+                          #neighbors=request.POST['Neighbors'],
+                          #Min_X_dimension=request.POST['Min_X_dimension'],
+                          #Min_Y_dimension=request.POST['Min_Y_dimension'],
+                          #useRecognition=True)
 
         # process uploaded file
         if True:
             objects_dict = app.object_detection()
-        facesno = app.create_name_dict_from_file(recogn_name)
 
+        facesno = app.create_name_dict_from_file(recogn_name)
         faces = facesno.dict.keys()
         confidenece = facesno.values()
         objects = objects_dict.keys()
@@ -174,7 +215,7 @@ def annotate(request):
         tags['objects'] = objects
         tags['probabilities'] = probabilities
         resp['meta'] = meta
-        resp ['tags'] = tags
+        resp['tags'] = tags
 
         return JsonResponse(resp)
     else:
@@ -237,12 +278,12 @@ def configure(request):
 @csrf_exempt
 def model(request):
     if (request.method == 'POST' and
-        request.FILES['model']):
+       request.FILES['model']):
 
         uploadedzip = request.FILES['model']
         uploadedname = request.FILES['model'].name
         # Unzip file and parse content
-        zippath = join(settings.MEDIA_ROOT, 'model.zip')
+        zippath = os.path.join(settings.MEDIA_ROOT, 'model.zip')
         with open(zippath, 'wb+') as destination:
             for chunk in uploadedzip.chunks():
                 destination.write(chunk)
@@ -250,10 +291,10 @@ def model(request):
         if not zipfile.is_zipfile(zippath):
             return HttpResponseBadRequest("The is not a zip file")
 
-        extractdir = join(settings.MEDIA_ROOT, 'faces', os.path.splitext(uploadedname))
-        if exists(extractdir):
-            extractdir += "_" + str(randint(0,9))
-        makedirs(extractdir)
+        extractdir = os.path.join(settings.MEDIA_ROOT, 'faces', os.path.splitext(uploadedname))
+        if os.path.exists(extractdir):
+            extractdir += "_" + str(randint(0, 9))
+        os.makedirs(extractdir)
 
         zip_ref = zipfile.ZipFile(zippath, 'r')
         zip_ref.extractall(extractdir)
@@ -264,9 +305,8 @@ def model(request):
         # Create faces.csv and face_labels.txt file
         create_csv(extractdir, ';')
 
-
         people = []
-        for facename in listdir(extractdir):
+        for facename in os.listdir(extractdir):
             people.append(facename)
 
         resp = dict()
@@ -279,14 +319,14 @@ def model(request):
 
 def create_csv(path, separator):
     label = 0
-    topdir, folder = split(path)
-    csvpath = join(topdir, folder+'.csv')
+    topdir, folder = os.path.split(path)
+    csvpath = os.path.join(topdir, folder+'.csv')
     with open(csvpath, 'wb') as csvfile:
         face_writer = csv.writer(csvfile, delimeter=separator)
         for dirname, dirnames, filenames in os.walk(path):
             for subdirname in dirnames:
-                subject_path = join(dirname, subdirname)
-                for filename in listdir(subject_path):
+                subject_path = os.path.join(dirname, subdirname)
+                for filename in os.listdir(subject_path):
                     abs_path = "%s/%s" % (subject_path, filename)
                     face_writer.writerow([abs_path, label])
                 label = label + 1
@@ -297,16 +337,28 @@ def parse_directory(request):
     dr = "/media/yiorgos/Maxtor/thesis_video/eu_screen_SD/"
     # dr = request.POST['dir']
     videos = []
-    for(dirpath, dirnames, filenames) in walk(dr):
+    for(dirpath, dirnames, filenames) in os.walk(dr):
         for f in filenames:
-            #if f.endswith('.mp4') or f.endswith('.mov'):
+            # if f.endswith('.mp4') or f.endswith('.mov'):
             if f.endswith('.mp4'):
-                videos.append(join(dirpath, f))
-    #print videos
+                videos.append(os.path.join(dirpath, f))
+    # print videos
     for v in videos:
         for r in ['LBPH', 'FF', 'EF']:
             App(v, r)
     return HttpResponse("Videos parsed!")
 
 
-
+def create_name_dict_from_file(rec):
+    if not rec:
+        return
+    d = {}
+    with open(os.path.join('/tmp', 'faces_in_current_video.txt'), 'r') as f:
+        lines = f.readlines()
+        for key in lines:
+            if key in d:
+                d[key] += 1
+            else:
+                d[key] = 1
+    os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
+    return d
