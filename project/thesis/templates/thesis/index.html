@@ -62,7 +62,7 @@ videojs.options.flash.swf = "{% static 'flat-ui/dist/js/vendors/video-js.swf' %}
           {% block side_block %}
           <p>Detect your people</p>
 
-          <form id="first-form" action="/thesis/upload/"  method="post">
+          <form id="first-form" action="/thesis/defaultdetection/"  method="post">
             {% csrf_token %}
             {% for hidden in form.hidden_fields %}
             <div class="form-group">
@@ -92,7 +92,7 @@ function myFunction(bool, objbool) {
             </script>
           </form>
           <p>Do you want to specify more parameters?<p>
-          <a href="/thesis/upload/" class="fui-plus btn btn-block btn-lg btn-primary"></a><br />
+          <a href="/thesis/defaultdetection/" class="fui-plus btn btn-block btn-lg btn-primary"></a><br />
           {% endblock %}
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-9col-md-offset-3 main">
@@ -151,7 +151,7 @@ function myFunction(bool, objbool) {
                           {% for key, values in objects.items %}
                           <div class="col-xs-6 col-md-3">
                                 <a href="#" class="thumbnail">
-                                    <img src="{% static 'obj-detect-frames/'%}{{ key }}" alt="...">
+                                    <img src="'/media/obj-detect-frames/'{{ key }}" alt="...">
                                  </a>
                                  <p>Class(es): {{ values.0 }}</p>
                                  <p>Probability: {{ values.1 }}</p>

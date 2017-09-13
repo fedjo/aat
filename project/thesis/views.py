@@ -45,8 +45,8 @@ def default_detection(request):
 
             log.debug('Video path is {} and recognizer {}'
                       .format(video_path, recognizer_name))
-            log.debug("The values provided are: scale {}, neighbors {},
-                      min x dimension {}, min y dimension {}"
+            log.debug("The values provided are: scale {}, neighbors {},"
+                      "min x dimension {}, min y dimension {}"
                       .format(1.3, 3, 30, 30))
 
             d = dict()
@@ -54,16 +54,16 @@ def default_detection(request):
             if has_recognition == 'true':
                 recognizer_name = 'LBPH'
                 video.setRecognizer(recognizer_name)
-                video.detectFaces(scale=1.3, neighbors=3, Min_X_dimension=30,
-                                  Min_Y_dimension=30, useRecognition=True)
+                video.detectFaces(scale=1.3, neighbors=3, minx=30,
+                                  miny=30, useRecognition=True)
                 d = create_name_dict_from_file(recognizer_name)
             else:
                 recognizer_name = ''
-                video.detectFaces(scale=1.3, neighbors=3, Min_X_dimension=30,
-                                  Min_Y_dimension=30, useRecognition=False)
+                video.detectFaces(scale=1.3, neighbors=3, minx=30,
+                                  miny=30, useRecognition=False)
 
-            if has_detection:
-                objects = video.perform_obj_detection()
+            #if has_detection:
+                #objects = video.perform_obj_detection()
 
             h, ui_video_name = os.path.split(
                     create_ui_video_name(video_path, recognizer_name))
@@ -129,26 +129,27 @@ def complex_detection(request):
             if isinstance(video_file, basestring):
                 video_path = video_file
             else:
-                video_path = video_path.temporary_file_path()
+                video_path = video_file.temporary_file_path()
             video = Video(video_path)
             if request.POST['recognizer'] != 'No':
-                recognizer_name = form.recognizer
+                log.debug(form.__dict__)
+                recognizer_name = form.cleaned_data['recognizer']
                 video.setRecognizer(recognizer_name)
                 video.detectFaces(scale=request.POST['Scale'],
                                   neighbors=request.POST['Neighbors'],
-                                  Min_X_dimension=request.POST['Min_X_dimension'],
-                                  Min_Y_dimension=request.POST['Min_Y_dimension'],
+                                  minx=request.POST['Min_X_dimension'],
+                                  miny=request.POST['Min_Y_dimension'],
                                   useRecognition=True)
                 d = create_name_dict_from_file(recognizer_name)
             else:
                 recognizer_name = ''
                 video.detectFaces(scale=request.POST['Scale'],
                                   neighbors=request.POST['Neighbors'],
-                                  Min_X_dimension=request.POST['Min_X_dimension'],
-                                  Min_Y_dimension=request.POST['Min_Y_dimension'],
+                                  minx=request.POST['Min_X_dimension'],
+                                  miny=request.POST['Min_Y_dimension'],
                                   useRecognition=False)
 
-            objects = video.perform_obj_detection()
+            #objects = video.perform_obj_detection()
 
             h, ui_video_name = os.path.split(
                     create_ui_video_name(video_path, recognizer_name))
@@ -187,13 +188,13 @@ def annotate(request):
         video.setRecognizer(recognizer_name)
         video.detectFaces(scale=1.3,
                           neighbors=3,
-                          Min_X_dimension=30,
-                          Min_Y_dimension=30,
+                          minx=30,
+                          miny=30,
                           useRecognition=True)
         #video.detectFaces(scale=request.POST['Scale'],
                           #neighbors=request.POST['Neighbors'],
-                          #Min_X_dimension=request.POST['Min_X_dimension'],
-                          #Min_Y_dimension=request.POST['Min_Y_dimension'],
+                          #minx=request.POST['Min_X_dimension'],
+                          #miny=request.POST['Min_Y_dimension'],
                           #useRecognition=True)
 
         # process uploaded file

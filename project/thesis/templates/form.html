@@ -90,7 +90,7 @@
                     {% block side_block %}
                     <div class="form-group">
                       <p>Detect your people</p>
-                      <form id="second-form" action="/thesis/process/" enctype="multipart/form-data" method="post" >
+                      <form id="second-form" action="/thesis/complexdetection/" enctype="multipart/form-data" method="post" >
                         {% csrf_token %}
                         {% for hidden in form.hidden_fields %}
                         {{ hidden }}
@@ -126,15 +126,15 @@
                               {{ radio.choice_label }}
                               {{ radio.tag }}
                           </label>
-                        {% endfor %}
+                       {% endfor %}
 
                         <a class="fui-video btn btn-block btn-lg btn-primary" onclick="myFunction('No')"></a>
                         <a class="fui-eye btn btn-block btn-lg btn-primary" onclick="myFunction('')"></a>
 
                         <script>
                             function myFunction(val) {
-                              if(val != '')
-                                document.getElementById("id_recognizer").value = val;
+                              //if(val != '')
+                                //document.getElementById("id_recognizer").value = val;
                               document.getElementById("second-form").submit();
                             }
                         </script>
