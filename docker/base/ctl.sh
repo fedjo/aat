@@ -10,6 +10,7 @@ _postinit() {
     #$FACEREC_APP_DIR/manage.py addexam 'Demo Exam' clinical_fmri.zip -s3
     cp -r $FACEREC_APP_DIR/static/haar_cascades $FACEREC_MEDIA_DIR
     cp -r $FACEREC_APP_DIR/static/recognizer_train_data $FACEREC_MEDIA_DIR
+    cp -r $FACEREC_APP_DIR/static/faces $FACEREC_CACHE_DIR
     $FACEREC_APP_DIR/manage.py loaddata prepop
     echo ""
 }

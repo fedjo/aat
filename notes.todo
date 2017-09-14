@@ -17,7 +17,8 @@
 - [x] Selective Search before object detection
 - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
 - [x] Add celery for asynchronous tasks
-    - [ ] Create tasks for face detection/ face recognition/ object detection
+    - [x] Create tasks for face detection/ face recognition/ object detection
+    - [ ] Fix celery tasks time limits to handle long detection tasks [1]
 - [ ] Add authentication system
 - [ ] Gender classification
 - [ ] Landmark detection
@@ -29,3 +30,6 @@
 - [ ] Refactor django application using django rest framework plugin
 - [ ] Try to solve issues with py-faster rcnn
 - [ ] Embedd py-faster rcnn to the application
+
+
+[1] http://docs.celeryproject.org/en/latest/userguide/workers.html#time-limits

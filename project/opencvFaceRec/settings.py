@@ -101,19 +101,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'tomotech.lib': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'app': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'exrepo': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'dicomweb': {
+        'thesis': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
