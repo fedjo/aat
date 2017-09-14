@@ -16,3 +16,15 @@ class Configuration(models.Model):
     objdetector_name = models.CharField(max_length=50)
 
     manual_tags = models.CharField(max_length=50)
+
+
+class Cascade(models.Model):
+    name = models.CharField(max_length=100)
+    xml_file = models.FileField(upload_to='haar_cascades/')
+
+
+class RecognizerPreTrainedData(models.Model):
+    name = models.CharField(max_length=50)
+    recognizer = models.CharField(max_length=50)
+    yml_file = models.FileField(upload_to='recognizer_train_data/')
+

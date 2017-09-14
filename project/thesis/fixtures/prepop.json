@@ -14,6 +14,100 @@
             "manual_tags": ""
         }
 
+    },
+    {
+        "model": "thesis.cascade",
+        "pk": 1,
+        "fields": {
+            "name": "haarcascade_frontalface_alt2.xml",
+            "xml_file": "haar_cascades/haarcascade_frontalface_alt2.xml"
+        }
+
+    },
+    {
+        "model": "thesis.cascade",
+        "pk": 2,
+        "fields": {
+            "name": "haarcascade_profileface.xml",
+            "xml_file": "haar_cascades/haarcascade_profileface.xml"
+        }
+
+    },
+    {
+        "model": "thesis.cascade",
+        "pk": 3,
+        "fields": {
+            "name": "haarcascade_frontalcatface_extended.xml",
+            "xml_file": "haar_cascades/haarcascade_frontalcatface_extended.xml"
+        }
+
+    },
+    {
+        "model": "thesis.cascade",
+        "pk": 4,
+        "fields": {
+            "name": "haarcascade_frontalcatface.xml",
+            "xml_file": "haar_cascades/haarcascade_frontalcatface.xml"
+        }
+
+    },
+    {
+        "model": "thesis.cascade",
+        "pk": 5,
+        "fields": {
+            "name": "haarcascade_frontalface_default.xml",
+            "xml_file": "haar_cascades/haarcascade_frontalface_default.xml"
+        }
+
+    },
+    {
+        "model": "thesis.recognizerpretraineddata",
+        "pk": 1,
+        "fields": {
+            "name": "mecanex_LBPHfaces_model_5.yml",
+            "recognizer": "LBPH",
+            "yml_file": "recognizer_train_data/mecanex_LBPHfaces_model_5.yml"
+        }
+
+    },
+    {
+        "model": "thesis.recognizerpretraineddata",
+        "pk": 2,
+        "fields": {
+            "name": "rec-EF.yml",
+            "recognizer": "EF",
+            "yml_file": "hrecognizer_train_data/rec-EF.yml"
+        }
+
+    },
+    {
+        "model": "thesis.recognizerpretraineddata",
+        "pk": 3,
+        "fields": {
+            "name": "",
+            "recognizer": "FF",
+            "yml_file": "recognizer_train_data/rec-FF.yml"
+        }
+
+    },
+    {
+        "model": "thesis.recognizerpretraineddata",
+        "pk": 4,
+        "fields": {
+            "name": "rec-LBPH.yml",
+            "recognizer": "LBPH",
+            "yml_file": "recognizer_train_data/rec-LBPH.yml"
+        }
+
+    },
+    {
+        "model": "thesis.recognizerpretraineddata",
+        "pk": 5,
+        "fields": {
+            "name": "rec-LBPH2.yml",
+            "recognizer": "LBPH",
+            "yml_file": "recognizer_train_data/rec-LBPH2.yml"
+        }
+
     }
 ]
-

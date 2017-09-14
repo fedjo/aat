@@ -4,6 +4,7 @@ import json
 import shutil
 import zipfile
 import logging
+import tempfile
 from random import randint
 
 
@@ -95,10 +96,7 @@ def complex_detection(request):
             if not zipfile.is_zipfile(video_file.temporary_file_path()):
                 return HttpResponseBadRequest("The is not a zip file")
 
-            tmp_dir = '/tmp/video/'
-            if not os.path.exists(tmp_dir):
-                os.makedirs(tmp_dir)
-
+            tmp_dir = tempfile.mkdtemp()
             zip_ref = zipfile.ZipFile(video_file.temporary_file_path(), 'r')
             zip_ref.extractall(tmp_dir)
             zip_ref.close()
@@ -119,7 +117,7 @@ def complex_detection(request):
                     return HttpResponseBadRequest("The zip file you uploaded does not \
                             contain any video in .mp4 format")
 
-            shutil.rmtree('/tmp/video/')
+            shutil.rmtree(tmp_dir)
         # #################
 
         if form.is_valid():
