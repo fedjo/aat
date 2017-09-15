@@ -14,14 +14,17 @@ log = logging.getLogger(__name__)
 
 
 # Function to train and get the recognizer
-def configure_recognizer(name, faces_path):
+def configure_recognizer(name, faces_path, size=(0, 0)):
     # Read CSV face file and populate Face training set and labels
     frontal_cascade = Cascade.objects.get(pk=1)
     cv_frontal_cascade = cv2.CascadeClassifier(frontal_cascade.xml_file.path)
     csv_path = create_csv_file(faces_path)
+    if name != 'LBPH':
+        size = (160, 120)
     (face_labelsDict, faces_db, labels) = read_csv_file(name, csv_path,
-                                                        cv_frontal_cascade)
-    myrecognizer = Recognizer(name)
+                                                        cv_frontal_cascade,
+                                                        size)
+    myrecognizer = Recognizer(name, size)
     myrecognizer.train(faces_db, labels)
     return (myrecognizer, face_labelsDict)
 

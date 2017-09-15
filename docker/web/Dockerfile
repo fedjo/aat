@@ -33,7 +33,7 @@ RUN set -x && \
     useradd --system --gid $FACEREC_GROUP --uid 1000 -m $FACEREC_USER
 
 # Rename Flat-UI folder
-RUN mv $FACEREC_APP_DIR/thesis/static/Flat-UI $FACEREC_APP_DIR/static/flat-ui
+# RUN mv $FACEREC_APP_DIR/thesis/static/Flat-UI $FACEREC_APP_DIR/thesis/static/flat-ui
 
 # Run link to brainance-ctl.
 RUN ln -s $FACEREC_DIR/docker/base/ctl.sh /usr/local/bin/facerec-ctl

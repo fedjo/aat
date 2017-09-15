@@ -75,7 +75,8 @@ def default_detection(request):
                                                             minx, miny,
                                                             has_obj_det=True),
                                object_detection.s())()
-                objects = result.get()
+                (framesdir, objects) = result.get()
+                log.debug('lalala: {}'.format(framesdir))
                 names = dict()
                 names = create_name_dict_from_file()
             except Exception as e:
@@ -88,7 +89,9 @@ def default_detection(request):
             shutil.copyfile(video_store_path, video_serve_path)
             context = {'form':  PostForm(),
                        'media': os.path.basename(video_serve_path),
-                       'names': names, 'objects': objects}
+                       'names': names,
+                       'framesdir': os.path.basename(os.path.normpath(framesdir)),
+                       'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
             log.error(form.errors.as_data())
@@ -180,7 +183,8 @@ def complex_detection(request):
                                                             minx, miny,
                                                             has_obj_det=True),
                                object_detection.s())()
-                objects = result.get()
+                (framesdir, objects) = result.get()
+                log.debug('lalala: {}'.format(framesdir))
                 names = dict()
                 names = create_name_dict_from_file()
             except Exception as e:
@@ -193,7 +197,9 @@ def complex_detection(request):
             shutil.copyfile(video_store_path, video_serve_path)
             context = {'boldmessage':  'Test Video',
                        'media': os.path.basename(video_serve_path),
-                       'names': names, 'objects': objects}
+                       'names': names,
+                       'framesdir': os.path.basename(os.path.normpath(framesdir)),
+                       'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
             log.debug(form.errors.as_table())

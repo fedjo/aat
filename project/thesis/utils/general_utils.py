@@ -49,7 +49,7 @@ def create_csv_file(faces_basepath):
     return CSV_PATH
 
 
-def read_csv_file(recogn_name, csv_path, cascade):
+def read_csv_file(recogn_name, csv_path, cascade, size):
     log.debug('CSV file {}'.format(csv_path))
     # Dict with key the label number and value the name
     # of the person
@@ -74,19 +74,21 @@ def read_csv_file(recogn_name, csv_path, cascade):
                 if recogn_name == 'LBPH':
                     faces_db.append(gray[y:y+h, x:x+w])
                 else:
-                    faces_db.append(cv2.resize(gray[y:y+h, x:x+w], (150, 150)))
+                    faces_db.append(cv2.resize(gray[y:y+h, x:x+w], size))
     log.debug(face_labelsDict)
     return (face_labelsDict, faces_db, labels)
 
 
 def create_name_dict_from_file():
     d = {}
-    with open(os.path.join('/tmp', 'faces_in_current_video.txt'), 'r') as f:
-        lines = f.readlines()
-        for key in lines:
-            if key in d:
-                d[key] += 1
-            else:
-                d[key] = 1
-    os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
+    faces_filepath = os.path.join('/tmp', 'faces_in_current_video.txt')
+    if os.path.exists(faces_filepath):
+        with open(faces_filepath, 'r') as f:
+            lines = f.readlines()
+            for key in lines:
+                if key in d:
+                    d[key] += 1
+                else:
+                    d[key] = 1
+        os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
     return d

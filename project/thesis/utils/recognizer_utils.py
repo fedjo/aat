@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 class Recognizer(object):
 
-    def __init__(self, recongnName):
+    def __init__(self, recongnName, size):
         # Dictionary providing the recognizer class for each recognizer
         self.recognDict = {
                     'LBPH': cv2.face.createLBPHFaceRecognizer,
@@ -23,14 +23,28 @@ class Recognizer(object):
                 }
         self.recongnName = recongnName
         self.recognizer = self.recognDict[recongnName]()
+        self.train_data_dir = os.path.join(settings.MEDIA_ROOT,
+                                           'recognizer_train_data')
+        self.size = size
 
     def train(self, faces_db, labels):
-        if os.path.isfile('rec-' + self.recongnName + '.yml'):
-            self.recognizer.load('rec-' + self.recongnName + '.yml')
+        pretrained_filepath = os.path.join(self.train_data_dir,
+                                           'rec-' + self.recongnName +
+                                           '-' + str(self.size[0]) + 'x' +
+                                           str(self.size[1]) + '.yml')
+        if self.recongnName == 'LBPH':
+            pretrained_filepath = os.path.join(self.train_data_dir,
+                                               'mecanex_LBPHfaces_model_5.yml')
+        if os.path.exists(pretrained_filepath):
+            log.debug("Loading existing pretrained file: {}"
+                      .format(pretrained_filepath))
+            self.recognizer.load(pretrained_filepath)
             return
         try:
+            log.debug("Creating trained file: {}"
+                      .format(pretrained_filepath))
             self.recognizer.train(faces_db, numpy.array(labels))
-            self.recognizer.save('rec-' + self.recongnName + '.yml')
+            self.recognizer.save(pretrained_filepath)
         except Exception as e:
             log.error('error: ', str(e))
         finally:
@@ -44,7 +58,7 @@ class Recognizer(object):
             conf = 0.0
             if (self.recongnName is not 'LBPH') and (self.recongnName is not 'KNN'):
                 # Eigen/Fisher face recognizer
-                gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], (80, 80))
+                gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], self.size)
                 nbr_pred, conf = self.recognizer.predict(gray_resized)
             elif self.recognizer is 'KNN':
                 # KNN-LBPH recognizer
