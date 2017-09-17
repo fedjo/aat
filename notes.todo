@@ -13,7 +13,7 @@
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
 - [ ] Normalize face detection results
-- [ ] Option for bounding boxes (true/false)
+- [x] Option for bounding boxes (true/false)
 - [x] Selective Search before object detection
 - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
 - [x] Add celery for asynchronous tasks

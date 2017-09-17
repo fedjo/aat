@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 def face_detection(self, video_path, video_store_path,
                    #drecognizer,face_labelsDict,
                    haarcascades, scale, neighbors,
-                   minx, miny, useRecognition=False):
+                   minx, miny, has_bounding_boxes, useRecognition=False):
 
     #recognizer = Recognizer(drecognizer['recongnName'])
     #recognizer.recognizer = drecognizer['recognizer']
@@ -63,7 +63,7 @@ def face_detection(self, video_path, video_store_path,
                 f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
             out.release()
             cap.release()
-            return
+            return frames_temp_path
 
         # Keep every 50 frames for object detection
         if i % 50 == 0:
@@ -97,39 +97,45 @@ def face_detection(self, video_path, video_store_path,
         #   all_frames_face_rects.extend(profiles)
         #   current_faces.extend(profiles)
 
+        if (not has_bounding_boxes and not useRecognition):
+            recognition_time += 0
+            out.write(frame)
+            i += 1
+
+        # Measure time for recognition of faces on every frame
+        rec_start = time.time()
         # Get copy of the current colored frame and
         # draw all the rectangles of possible faces on the frame
+        # along with the name recognized
         frame_with_faces = frame.copy()
-        rec_start = time.time()
         for (x, y, w, h) in current_faces:
-            cv2.rectangle(frame_with_faces,
-                          (x, y),
-                          (x+w, y+h),
-                          (0, 0, 255),
-                          4)
             # Predict possible faces on the original frame
             faceName = 'person'
             if useRecognition:
                 faceName = recognizer.predictFaces(gray, (x, y, w, h),
                                                    face_labelsDict)
-                if not faceName:
-                    faceName = 'person'
-            size = cv2.getTextSize(faceName,
-                                   cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
-            cv2.rectangle(frame_with_faces,
-                          (x, y-size[1]-3),
-                          (x+size[0]+4, y+3),
-                          (0, 0, 255),
-                          -1)
-            cv2.putText(frame_with_faces, faceName, (x, y-2),
-                        cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+            if has_bounding_boxes:
+                cv2.rectangle(frame_with_faces,
+                              (x, y),
+                              (x+w, y+h),
+                              (0, 0, 255),
+                              4)
+                size = cv2.getTextSize(faceName,
+                                       cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
+                cv2.rectangle(frame_with_faces,
+                              (x, y-size[1]-3),
+                              (x+size[0]+4, y+3),
+                              (0, 0, 255),
+                              -1)
+                cv2.putText(frame_with_faces, faceName, (x, y-2),
+                            cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
 
         rec_end = time.time()
         recognition_time += rec_end - rec_start
+        # ##################################################
 
         # Write frame to video file
-        scaled_frame_with_faces = cv2.resize(frame_with_faces, (640, 480))
-        out.write(scaled_frame_with_faces)
+        out.write(cv2.resize(frame_with_faces, (640, 480)))
         i += 1
 
     out.release()

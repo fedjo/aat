@@ -17,8 +17,7 @@ from django.conf import settings
 from .models import Configuration
 from utils.video import Video, create_ui_video_name
 from utils.clock import Clock
-from .forms import VideoForm
-from .forms import PostForm
+from .forms import ComplexDetectionForm, DefaultDetectionForm
 
 
 log = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ log = logging.getLogger(__name__)
 
 def index(request):
     if request.method == 'GET':
-        form = PostForm()
+        form = DefaultDetectionForm()
         context = {'boldmessage':  'Hello, this is the index page',
                    'form': form,
                    'media': ''}
@@ -36,7 +35,7 @@ def index(request):
 @Clock.time
 def default_detection(request):
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = DefaultDetectionForm(request.POST)
         if form.is_valid():
             log.debug(form.as_table())
 
@@ -70,14 +69,14 @@ def default_detection(request):
                     create_ui_video_name(video_path, recognizer_name))
             log.debug(ui_video_name)
 
-            context = {'form':  PostForm(), 'media': ui_video_name, 'names': d,
+            context = {'form':  DefaultDetectionForm(), 'media': ui_video_name, 'names': d,
                        'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
             log.error(form.errors.as_data())
             return HttpResponseBadRequest("Form is not valid")
     else:
-        vidForm = VideoForm()
+        vidForm = ComplexDetectionForm()
         context = {'form': vidForm}
         return render(request, 'thesis/block.html', context)
 
@@ -85,40 +84,24 @@ def default_detection(request):
 @Clock.time
 def complex_detection(request):
     if request.method == 'POST':
-        form = VideoForm(request.POST, request.FILES)
+        form = ComplexDetectionForm(request.POST, request.FILES)
         if not form.is_valid():
-            form = VideoForm()
+            form = ComplexDetectionForm()
             return render(request, 'thesis/block.html', {'form': form})
 
         video_file = request.FILES['video']
-        # Handle ZIP files
+        # Handle ZIP uploaded video
         if request.POST['iszip'] == 'Yes':
-            if not zipfile.is_zipfile(video_file.temporary_file_path()):
-                return HttpResponseBadRequest("The is not a zip file")
+            video_file = extract_video(video_file)
+            if not os.path.exists(video_file):
+                return HttpResponseBadRequest(video_file)
+        # Handle ZIP faces db if provided
+        facesdb = request.FILES['facesdb']
+        if facesdb:
+            facesdb_path = extract_faces(facesdb)
+            if not os.path.exists(facesdb_path):
+                return HttpResponseBadRequest(facesdb_path)
 
-            tmp_dir = tempfile.mkdtemp()
-            zip_ref = zipfile.ZipFile(video_file.temporary_file_path(), 'r')
-            zip_ref.extractall(tmp_dir)
-            zip_ref.close()
-
-            files = os.listdir(tmp_dir)
-            if len(files) == 1:
-                if '.mp4' in files[0]:
-                    video_file = os.path.join(tmp_dir, files[0])
-                else:
-                    return HttpResponseBadRequest("The zip file you uploaded does not \
-                            contain any video in .mp4 format")
-            else:
-                video_file = ""
-                for f in files:
-                    if '.mp4' in f:
-                        video_file = os.path.join(tmp_dir, f)
-                if video_file == "":
-                    return HttpResponseBadRequest("The zip file you uploaded does not \
-                            contain any video in .mp4 format")
-
-            shutil.rmtree(tmp_dir)
-        # #################
 
         if form.is_valid():
             log.debug("Form is valid!")
@@ -156,9 +139,9 @@ def complex_detection(request):
             return render(request, 'thesis/index.html', context)
         else:
             log.debug(form.errors.as_table())
-            form = VideoForm()
+            form = ComplexDetectionForm()
     else:
-        form = VideoForm()
+        form = ComplexDetectionForm()
 
     return render(request, 'thesis/block.html', {'form': form})
 
@@ -361,3 +344,46 @@ def create_name_dict_from_file(rec):
                 d[key] = 1
     os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
     return d
+
+def extract_video(video_zipfile):
+            if not zipfile.is_zipfile(video_zipfile.temporary_file_path()):
+                return HttpResponseBadRequest("The is not a zip file")
+
+            tmp_dir = tempfile.mkdtemp()
+            zip_ref = zipfile.ZipFile(video_zipfile.temporary_file_path(), 'r')
+            zip_ref.extractall(tmp_dir)
+            zip_ref.close()
+
+            files = os.listdir(tmp_dir)
+            if len(files) == 0:
+                    mp4_path = "The zip file you uploaded does not"
+                               "contain any video in .mp4 format"
+            if len(files) == 1:
+                if '.mp4' in files[0]:
+                    mp4_path = os.path.join(tmp_dir, files[0])
+                else:
+                    mp4_path = "The zip file you uploaded does not"
+                               "contain any video in .mp4 format"
+            else:
+                for f in files:
+                    if '.mp4' in f:
+                        mp4_path = os.path.join(tmp_dir, f)
+            shutil.rmtree(tmp_dir)
+            return mp4_path
+
+
+def extract_faces(faces_zipfile):
+            if not zipfile.is_zipfile(faces_zipfile.temporary_file_path()):
+                return faces_path = "The is not a zip file"
+
+            tmp_dir = tempfile.mkdtemp()
+            zip_ref = zipfile.ZipFile(faces_zipfile.temporary_file_path(), 'r')
+            zip_ref.extractall(tmp_dir)
+            zip_ref.close()
+
+            files = os.listdir(tmp_dir)
+            if len(files) == 0:
+                    mp4_path = "The zip file you uploaded does not"
+                               "contain any file"
+            else:
+                return tmp_dir
