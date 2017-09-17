@@ -1,3 +1,6 @@
 django
+celery
+uwsgi
 numpy
 https://github.com/TracyWebTech/django-revproxy/archive/master.zip
+autosub

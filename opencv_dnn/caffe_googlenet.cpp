@@ -59,7 +59,7 @@ void getMaxClass(dnn::Blob &probBlob, int *classId, double *classProb)
     *classId = classNumber.x;
 }
 
-std::vector<String> readClassNames(const char *filename = "/opencv_dnn/synset_words.txt")
+std::vector<String> readClassNames(const char *filename = "/facerec/opencv_dnn/synset_words.txt")
 {
     std::vector<String> classNames;
 
@@ -84,8 +84,8 @@ std::vector<String> readClassNames(const char *filename = "/opencv_dnn/synset_wo
 
 int main(int argc, char **argv)
 {
-    String modelTxt = "/opencv_dnn/bvlc_googlenet.prototxt";
-    String modelBin = "/opencv_dnn/bvlc_googlenet.caffemodel";
+    String modelTxt = "/facerec/opencv_dnn/bvlc_googlenet.prototxt";
+    String modelBin = "/facerec/opencv_dnn/bvlc_googlenet.caffemodel";
     String imageFile = (argc > 1) ? argv[1] : "tests/space_shuttle.jpg";
 
     //! [Create the importer of Caffe model]

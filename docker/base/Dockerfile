@@ -81,3 +81,10 @@ ENV PATH=/facerec/opencv_dnn:${PATH}
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
 
+# Install ffmpeg
+RUN apt-get install -y software-properties-common python-software-properties && \
+    add-apt-repository -y ppa:mc3man/trusty-media && \
+    apt-get update && \
+    apt-get install -y \
+    ffmpeg
+

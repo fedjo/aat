@@ -6,6 +6,7 @@ import zipfile
 import logging
 import tempfile
 from random import randint
+from celery import chain
 
 
 from django.shortcuts import render
@@ -14,10 +15,12 @@ from django.http import HttpResponse, JsonResponse, \
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
-from .models import Configuration
-from utils.video import Video, create_ui_video_name
-from utils.clock import Clock
+from .models import Configuration, Cascade
 from .forms import ComplexDetectionForm, DefaultDetectionForm
+from utils.clock_utils import Clock
+from utils.video_utils import create_annotated_video_path
+from utils.general_utils import create_name_dict_from_file
+from thesis.tasks import face_detection_recognition, object_detection
 
 
 log = logging.getLogger(__name__)
@@ -41,7 +44,18 @@ def default_detection(request):
 
             video_path = request.POST['video_dir']
             has_recognition = request.POST['recognizer']
-            has_detection = request.POST['objdetection']
+            #has_detection = request.POST['objdetection']
+
+            faces_path = os.path.join(settings.CACHE_ROOT, 'faces/')
+            haarcascades = [1]
+            scale = 1.3
+            neighbors = 5
+            minx = 30
+            miny = 30
+            if has_recognition == 'true':
+                recognizer_name = 'LBPH'
+            else:
+                recognizer_name = ''
 
             log.debug('Video path is {} and recognizer {}'
                       .format(video_path, recognizer_name))
@@ -49,27 +63,33 @@ def default_detection(request):
                       "min x dimension {}, min y dimension {}"
                       .format(1.3, 3, 30, 30))
 
-            d = dict()
-            video = Video(video_path)
-            if has_recognition == 'true':
-                recognizer_name = 'LBPH'
-                video.setRecognizer(recognizer_name)
-                video.detectFaces(scale=1.3, neighbors=3, minx=30,
-                                  miny=30, useRecognition=True)
-                d = create_name_dict_from_file(recognizer_name)
-            else:
-                recognizer_name = ''
-                video.detectFaces(scale=1.3, neighbors=3, minx=30,
-                                  miny=30, useRecognition=False)
+            video_store_path = create_annotated_video_path(video_path, recognizer_name)
+            try:
+                result = chain(face_detection_recognition.s(video_path,
+                                                            video_store_path,
+                                                            recognizer_name,
+                                                            faces_path,
+                                                            haarcascades,
+                                                            scale, neighbors,
+                                                            minx, miny,
+                                                            has_obj_det=True),
+                               object_detection.s())()
+                (framesdir, objects) = result.get()
+                log.debug('lalala: {}'.format(framesdir))
+                names = dict()
+                names = create_name_dict_from_file()
+            except Exception as e:
+                log.debug(str(e))
+                return HttpResponseBadRequest("Video cannot be opened!")
 
-            #if has_detection:
-                #objects = video.perform_obj_detection()
+            log.debug("The annotated video path is {}".format(video_store_path))
 
-            h, ui_video_name = os.path.split(
-                    create_ui_video_name(video_path, recognizer_name))
-            log.debug(ui_video_name)
-
-            context = {'form':  DefaultDetectionForm(), 'media': ui_video_name, 'names': d,
+            video_serve_path = os.path.join(settings.STATIC_ROOT, 'video.mp4')
+            shutil.copyfile(video_store_path, video_serve_path)
+            context = {'form':  DefaultDetectionForm(),
+                       'media': os.path.basename(video_serve_path),
+                       'names': names,
+                       'framesdir': os.path.basename(os.path.normpath(framesdir)),
                        'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
@@ -105,36 +125,63 @@ def complex_detection(request):
 
         if form.is_valid():
             log.debug("Form is valid!")
+            log.debug(form.__dict__)
 
-            d = dict()
             if isinstance(video_file, basestring):
                 video_path = video_file
             else:
-                video_path = video_file.temporary_file_path()
-            video = Video(video_path)
-            if request.POST['recognizer'] != 'No':
-                log.debug(form.__dict__)
+                shutil.copy(video_file.temporary_file_path(),
+                            settings.CACHE_ROOT)
+                video_path = os.path.join(settings.CACHE_ROOT,
+                                          os.path.basename(video_file.temporary_file_path()))
+
+            has_recognition = request.POST['recognizer']
+            #has_detection = request.POST['objdetection']
+
+            faces_path = os.path.join(settings.CACHE_ROOT, 'faces/')
+            haarcascades = [1]
+            scale = form.cleaned_data['Scale']
+            neighbors = form.cleaned_data['Neighbors']
+            minx = form.cleaned_data['Min_X_dimension']
+            miny = form.cleaned_data['Min_Y_dimension']
+            if has_recognition != 'No':
                 recognizer_name = form.cleaned_data['recognizer']
-                video.setRecognizer(recognizer_name)
-                video.detectFaces(scale=request.POST['Scale'],
-                                  neighbors=request.POST['Neighbors'],
-                                  minx=request.POST['Min_X_dimension'],
-                                  miny=request.POST['Min_Y_dimension'],
-                                  useRecognition=True)
-                d = create_name_dict_from_file(recognizer_name)
             else:
                 recognizer_name = ''
-                video.detectFaces(scale=request.POST['Scale'],
-                                  neighbors=request.POST['Neighbors'],
-                                  minx=request.POST['Min_X_dimension'],
-                                  miny=request.POST['Min_Y_dimension'],
-                                  useRecognition=False)
 
-            #objects = video.perform_obj_detection()
+            log.debug('Video path is {} and recognizer {}'
+                      .format(video_path, recognizer_name))
+            log.debug("The values provided are: scale {}, neighbors {},"
+                      "min x dimension {}, min y dimension {}"
+                      .format(scale, neighbors, minx, miny))
 
-            h, ui_video_name = os.path.split(
-                    create_ui_video_name(video_path, recognizer_name))
-            context = {'boldmessage':  "Test video", 'media': ui_video_name,
+            video_store_path = create_annotated_video_path(video_path, recognizer_name)
+            try:
+                result = chain(face_detection_recognition.s(video_path,
+                                                            video_store_path,
+                                                            recognizer_name,
+                                                            faces_path,
+                                                            haarcascades,
+                                                            scale, neighbors,
+                                                            minx, miny,
+                                                            has_obj_det=True),
+                               object_detection.s())()
+                (framesdir, objects) = result.get()
+                log.debug('lalala: {}'.format(framesdir))
+                names = dict()
+                names = create_name_dict_from_file()
+            except Exception as e:
+                log.debug(str(e))
+                return HttpResponseBadRequest("Video cannot be opened!")
+
+            log.debug("The annotated video path is {}".format(video_store_path))
+
+            video_serve_path = os.path.join(settings.STATIC_ROOT, 'video.mp4')
+            shutil.copyfile(video_store_path, video_serve_path)
+            context = {'boldmessage':  'Test Video',
+                       'media': os.path.basename(video_serve_path),
+                       'names': names,
+                       'framesdir': os.path.basename(os.path.normpath(framesdir)),
                        'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:

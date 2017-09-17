@@ -27,4 +27,5 @@ class RecognizerPreTrainedData(models.Model):
     name = models.CharField(max_length=50)
     recognizer = models.CharField(max_length=50)
     yml_file = models.FileField(upload_to='recognizer_train_data/')
-
+    faces_path = models.CharField(max_length=150, blank=True)
+    csv_path = models.CharField(max_length=150, blank=True)

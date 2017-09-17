@@ -8,7 +8,7 @@
 - [X] Fix the HTTP API according to the document
 - [X] Create view to upload zip with faces to recognize
     - [x] Need to add logic to the views
-    - [ ] Create faces.csv  and face_label.txt from the view
+    - [x] Create faces.csv  and face_label.txt from the view
     - [ ] Test the API calls
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
@@ -17,10 +17,11 @@
 - [x] Selective Search before object detection
 - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
 - [x] Add celery for asynchronous tasks
-    - [ ] Create tasks for face detection/ face recognition/ object detection
+    - [x] Create tasks for face detection/ face recognition/ object detection
+    - [x] Fix celery tasks time limits to handle long detection tasks [1]
 - [ ] Add authentication system
-- [ ] Gender classification
-- [ ] Landmark detection
+- [ ] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
+- [ ] Landmark/Location detection
 
 
 
@@ -29,3 +30,7 @@
 - [ ] Refactor django application using django rest framework plugin
 - [ ] Try to solve issues with py-faster rcnn
 - [ ] Embedd py-faster rcnn to the application
+- [ ] Gender classification
+
+
+[1] http://docs.celeryproject.org/en/latest/userguide/workers.html#time-limits

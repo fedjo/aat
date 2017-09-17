@@ -101,19 +101,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'tomotech.lib': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'app': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'exrepo': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-        'dicomweb': {
+        'thesis': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
@@ -180,8 +168,8 @@ CELERY_SETTINGS = {
     'CELERY_TASK_SERIALIZER': 'json',
     'CELERYD_PREFETCH_MULTIPLIER': 1,
     # 'CELERYD_MAX_TASKS_PER_CHILD': 1,
-    'CELERYD_TASK_TIME_LIMIT': 60 * 10,
-    'CELERYD_TASK_SOFT_TIME_LIMIT': 60 * 8,
+    #'CELERYD_TASK_TIME_LIMIT': 60 * 10,
+    #'CELERYD_TASK_SOFT_TIME_LIMIT': 60 * 8,
     #'CELERY_ALWAYS_EAGER': True,
 }
 
