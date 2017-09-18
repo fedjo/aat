@@ -72,6 +72,7 @@ def default_detection(request):
                                                             haarcascades,
                                                             scale, neighbors,
                                                             minx, miny,
+                                                            has_bounding_boxes=True,
                                                             has_obj_det=True),
                                object_detection.s())()
                 (framesdir, objects) = result.get()
@@ -144,6 +145,7 @@ def complex_detection(request):
             neighbors = form.cleaned_data['Neighbors']
             minx = form.cleaned_data['Min_X_dimension']
             miny = form.cleaned_data['Min_Y_dimension']
+            has_boundingboxes = form.cleaned_data['Bounding_Boxes']
             if has_recognition != 'No':
                 recognizer_name = form.cleaned_data['recognizer']
             else:
@@ -164,6 +166,7 @@ def complex_detection(request):
                                                             haarcascades,
                                                             scale, neighbors,
                                                             minx, miny,
+                                                            has_bounding_boxes=has_boundingboxes,
                                                             has_obj_det=True),
                                object_detection.s())()
                 (framesdir, objects) = result.get()
@@ -394,7 +397,7 @@ def create_name_dict_from_file(rec):
 
 def extract_video(video_zipfile):
             if not zipfile.is_zipfile(video_zipfile.temporary_file_path()):
-                return HttpResponseBadRequest("The is not a zip file")
+                return "The is not a zip file"
 
             tmp_dir = tempfile.mkdtemp()
             zip_ref = zipfile.ZipFile(video_zipfile.temporary_file_path(), 'r')
@@ -403,14 +406,14 @@ def extract_video(video_zipfile):
 
             files = os.listdir(tmp_dir)
             if len(files) == 0:
-                    mp4_path = "The zip file you uploaded does not"
-                               "contain any video in .mp4 format"
+                mp4_path = "The zip file you uploaded does not \
+                            contain any video in .mp4 format"
             if len(files) == 1:
                 if '.mp4' in files[0]:
                     mp4_path = os.path.join(tmp_dir, files[0])
                 else:
-                    mp4_path = "The zip file you uploaded does not"
-                               "contain any video in .mp4 format"
+                    mp4_path = "The zip file you uploaded does not \
+                               contain any video in .mp4 format"
             else:
                 for f in files:
                     if '.mp4' in f:
@@ -421,7 +424,7 @@ def extract_video(video_zipfile):
 
 def extract_faces(faces_zipfile):
             if not zipfile.is_zipfile(faces_zipfile.temporary_file_path()):
-                return faces_path = "The is not a zip file"
+                return "The is not a zip file"
 
             tmp_dir = tempfile.mkdtemp()
             zip_ref = zipfile.ZipFile(faces_zipfile.temporary_file_path(), 'r')
@@ -430,7 +433,7 @@ def extract_faces(faces_zipfile):
 
             files = os.listdir(tmp_dir)
             if len(files) == 0:
-                    mp4_path = "The zip file you uploaded does not"
-                               "contain any file"
+                    mp4_path = "The zip file you uploaded does not \
+                               contain any file"
             else:
                 return tmp_dir

@@ -183,3 +183,34 @@ def object_detection(self, frames_temp_path):
             raise
     #shutil.rmtree(frames_temp_path)
     return (frames_temp_path, detectd_frames)
+
+
+@shared_task(bind=True)
+def transcribe(self, video_path):
+    log.debug("Start transcribing video")
+
+    cmd = ['autosub',  video_path]
+    try:
+        p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        cmd.pop()
+        log.debug(os.listdir(os.path.abspath(video_path)))
+        if stdout:
+            srt_path = video_path[:-4] + '.srt'
+    except:
+        log.error("Unexpected error: {}".format(sys.exc_info()[0]))
+        raise
+    #shutil.rmtree(frames_temp_path)
+    cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
+           '-c', 'copy', '-c:s', 'mov_text', video_path]
+    try:
+        p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        cmd.pop()
+        log.debug(os.listdir(os.path.abspath(video_path)))
+    except:
+        log.error("Unexpected error: {}".format(sys.exc_info()[0]))
+        raise
+
+    return
+

@@ -29,4 +29,5 @@ class ComplexDetectionForm(forms.Form):
     Neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
     Min_X_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
     Min_Y_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    Bounding_Boxes = forms.BooleanField()
     facesdb = forms.FileField(required=False, widget=forms.ClearableFileInput())

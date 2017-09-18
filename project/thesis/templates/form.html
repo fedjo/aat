@@ -99,7 +99,7 @@
                         {% for field in form.visible_fields %}
                         {% if not field.name == "iszip" and not field.name == "video" %}
 
-                        <label for="inputTiltle">{{ f eld.name }}</label>
+                        <label for="inputTiltle">{{ field.name }}</label>
                         <div class="input-group">
                           {{ field }}
                           <span class="input-group-addon"
