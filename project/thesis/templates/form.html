@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
 {% load staticfiles %}
+{% load str_replace %}
 
 <html>
   <head>
@@ -29,19 +30,20 @@
    </script>
    <script>
       function listInfo(type) {
-        if(type == 'id_Scale') {
+        console.log('Function listInfo');
+        if(type == 'id_scale') {
           document.getElementById('body').innerHTML = '<div id="info"><h1><h1>The Scale attribute</h1>' +
             '<p>The scale attribute refers to the scale factor the the scanning window'
             + 'will increase/decrease</p><img id="theImg" src="/static/images/big_scale.png" />'+
             '<button class="btn btn-embossed btn-primary" onclick="removeImg();">Close</button></div>';
         }
-        if(type == 'id_Neighbors') {
+        if(type == 'id_neighbors') {
           document.getElementById('body').innerHTML = '<div id="info"><h1><h1>The Neighbors attribute</h1>' +
             '<p>The scale attribute refers to the scale factor the the scanning window'
             + 'will increase/decrease</p><img id="theImg" src="/static/images/min_neighbors.png" />'+
             '<button class="btn btn-embossed btn-primary" onclick="removeImg();">Close</button></div>';
         }
-        if(type.indexOf("Min") !== -1) {
+        if(type.indexOf("min") !== -1) {
           document.getElementById('body').innerHTML = '<div id="info"><h1>The Minimum X, Y dimension attributes</h1>' +
             '<p>The scale attribute refers to the scale factor the the scanning window'
             + 'will increase/decrease</p><img id="theImg" src="/static/images/min_x_y.png" /><img id="theImg" src="/static/images/min_x_y_2.png" />' +
@@ -99,11 +101,10 @@
                         {% for field in form.visible_fields %}
                         {% if not field.name == "iszip" and not field.name == "video" %}
 
-                        <label for="inputTiltle">{{ field.name }}</label>
+                        <label for="inputTiltle">{{ field.name | capfirst | replace }}</label>
                         <div class="input-group">
                           {{ field }}
-                          <span class="input-group-addon"
-                                onmouseover='var v = this.parentNode.childNodes[1].id;  listInfo(v);' >
+                          <span class="input-group-addon" onmouseover='var v = this.parentNode.childNodes[1].id;  listInfo(v);' >
                                 <!--onmouseout="removeImg();">-->
                                 ?
                           </span>
@@ -128,8 +129,9 @@
                           </label>
                        {% endfor %}
 
-                        <a class="fui-video btn btn-block btn-lg btn-primary" onclick="myFunction('No')"></a>
-                        <a class="fui-eye btn btn-block btn-lg btn-primary" onclick="myFunction('')"></a>
+                        <a class="fui-eye btn btn-block btn-lg btn-primary" onclick="myFunction('No')"></a>
+                        <a class="fui-user btn btn-block btn-lg btn-primary" onclick="myFunction('')"></a>
+                        <a class="fui-image btn btn-block btn-lg btn-primary" onclick="myFunction('No')"></a>
 
                         <script>
                             function myFunction(val) {
