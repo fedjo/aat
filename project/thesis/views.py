@@ -75,10 +75,8 @@ def default_detection(request):
                                                             has_bounding_boxes=True,
                                                             has_obj_det=True),
                                object_detection.s())()
-                (framesdir, objects) = result.get()
+                (framesdir, objects, names) = result.get()
                 log.debug('lalala: {}'.format(framesdir))
-                names = dict()
-                names = create_name_dict_from_file()
             except Exception as e:
                 log.debug(str(e))
                 return HttpResponseBadRequest("Video cannot be opened!")
@@ -169,10 +167,8 @@ def complex_detection(request):
                                                             has_bounding_boxes=has_boundingboxes,
                                                             has_obj_det=True),
                                object_detection.s())()
-                (framesdir, objects) = result.get()
+                (framesdir, objects, names) = result.get()
                 log.debug('lalala: {}'.format(framesdir))
-                names = dict()
-                names = create_name_dict_from_file()
             except Exception as e:
                 log.debug(str(e))
                 return HttpResponseBadRequest("Video cannot be opened!")

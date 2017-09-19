@@ -70,7 +70,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                     f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
                 out.release()
                 cap.release()
-                return frames_temp_path
+                return frames_temp_path, faces_count
 
             # Keep every 50 frames for object detection
             if (frames_temp_path and i % 50 == 0):
@@ -111,6 +111,7 @@ def face_detection_recognition(self, video_path, video_store_path,
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
+            faces_count = dict()
             frame_with_faces = frame.copy()
             for (x, y, w, h) in current_faces:
                 facename_prob = 'person - NaN %'
@@ -119,8 +120,13 @@ def face_detection_recognition(self, video_path, video_store_path,
                     (facename, prob) = myrecognizer.predictFaces(gray, (x, y, w, h),
                                                                  face_labelsDict)
                     facename_prob = facename + ' - ' + str(prob) + '%'
-                    if not facename_prob:
+                    if not facename:
                         facename_prob = 'person - NaN %'
+                    else:
+                        if facename in faces_count:
+                            faces_count[facename] += 1
+                        else:
+                            faces_count[facename] = 1
                 if has_bounding_boxes:
                     # Draw rectangle around the face
                     cv2.rectangle(frame_with_faces,
@@ -153,16 +159,17 @@ def face_detection_recognition(self, video_path, video_store_path,
         log.error(str(e))
         out.release()
         cap.release()
-        return frames_temp_path
+        return frames_temp_path, faces_count
 
     out.release()
     cap.release()
-    return frames_temp_path
+    return frames_temp_path, faces_count
 
 
 @shared_task(bind=True)
-def object_detection(self, frames_temp_path):
+def object_detection(self, faces_and_frames):
     log.debug("Start detecting objects")
+    frames_temp_path, faces_count = faces_and_frames
     detectd_frames = dict()
     if not frames_temp_path:
         return detectd_frames
@@ -182,7 +189,7 @@ def object_detection(self, frames_temp_path):
             log.error("Unexpected error: {}".format(sys.exc_info()[0]))
             raise
     #shutil.rmtree(frames_temp_path)
-    return (frames_temp_path, detectd_frames)
+    return (frames_temp_path, detectd_frames, faces_count)
 
 
 @shared_task(bind=True)
