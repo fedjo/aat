@@ -100,11 +100,16 @@ def face_detection_recognition(self, video_path, video_store_path,
 
             # __throw_overlapping(profiles)
 
-            if (not has_bounding_boxes and not useRecognition):
-                recognition_time += 0
-                out.write(frame)
-                i += 1
-                continue
+            if (not has_bounding_boxes and not recognizer_name):
+                # Write frame to video file
+                try:
+                    out.write(cv2.resize(frame, (640, 480)))
+                    recognition_time += 0
+                    i += 1
+                    continue
+                except Exception as e:
+                    log.error("Cannot write new frame to video")
+                    log.error(str(e))
 
             # Measure time for recognition of faces on every frame
             rec_start = time.time()

@@ -44,7 +44,7 @@ def default_detection(request):
 
             video_path = request.POST['video_dir']
             has_recognition = request.POST['recognizer']
-            #has_detection = request.POST['objdetection']
+            has_detection = request.POST['objdetection']
 
             faces_path = os.path.join(settings.CACHE_ROOT, 'faces/')
             haarcascades = [1]
@@ -56,6 +56,10 @@ def default_detection(request):
                 recognizer_name = 'LBPH'
             else:
                 recognizer_name = ''
+            if has_detection == 'true':
+                has_detection = True
+            else:
+                has_detection = False
 
             log.debug('Video path is {} and recognizer {}'
                       .format(video_path, recognizer_name))
@@ -73,7 +77,7 @@ def default_detection(request):
                                                             scale, neighbors,
                                                             minx, miny,
                                                             has_bounding_boxes=True,
-                                                            has_obj_det=True),
+                                                            has_obj_det=has_detection),
                                object_detection.s())()
                 (framesdir, objects, names) = result.get()
                 log.debug('lalala: {}'.format(framesdir))
@@ -83,8 +87,12 @@ def default_detection(request):
 
             log.debug("The annotated video path is {}".format(video_store_path))
 
-            video_serve_path = os.path.join(settings.STATIC_ROOT, 'video.mp4')
-            shutil.copyfile(video_store_path, video_serve_path)
+            # TO TEST
+            shutil.copy(video_store_path, settings.STATIC_ROOT)
+            video_serve_path = os.path.join(settings.STATIC_ROOT,
+                                            os.path.basename(video_store_path))
+            os.remove(video_path)
+            os.remove(video_store_path)
             context = {'form':  DefaultDetectionForm(),
                        'media': os.path.basename(video_serve_path),
                        'names': names,
@@ -104,27 +112,23 @@ def default_detection(request):
 def complex_detection(request):
     if request.method == 'POST':
         form = ComplexDetectionForm(request.POST, request.FILES)
-        if not form.is_valid():
-            form = ComplexDetectionForm()
-            return render(request, 'thesis/block.html', {'form': form})
-
-        video_file = request.FILES['video']
-        # Handle ZIP uploaded video
-        if request.POST['iszip'] == 'Yes':
-            video_file = extract_video(video_file)
-            if not os.path.exists(video_file):
-                return HttpResponseBadRequest(video_file)
-        # Handle ZIP faces db if provided
-        facesdb = request.FILES['facesdb']
-        if facesdb:
-            facesdb_path = extract_faces(facesdb)
-            if not os.path.exists(facesdb_path):
-                return HttpResponseBadRequest(facesdb_path)
-
-
         if form.is_valid():
             log.debug("Form is valid!")
             log.debug(form.__dict__)
+
+            video_file = request.FILES['video']
+            # Handle ZIP uploaded video
+            if request.POST['iszip'] == 'Yes':
+                video_file = extract_video(video_file)
+                if not os.path.exists(video_file):
+                    return HttpResponseBadRequest(video_file)
+            # Handle ZIP faces db if provided
+            if 'facesdb' in request.FILES:
+                facesdb = request.FILES['facesdb']
+                if facesdb:
+                    facesdb_path = extract_faces(facesdb)
+                    if not os.path.exists(facesdb_path):
+                        return HttpResponseBadRequest(facesdb_path)
 
             if isinstance(video_file, basestring):
                 video_path = video_file
@@ -136,14 +140,15 @@ def complex_detection(request):
 
             has_recognition = request.POST['recognizer']
             #has_detection = request.POST['objdetection']
+            has_detection = True
 
             faces_path = os.path.join(settings.CACHE_ROOT, 'faces/')
             haarcascades = [1]
-            scale = form.cleaned_data['Scale']
-            neighbors = form.cleaned_data['Neighbors']
-            minx = form.cleaned_data['Min_X_dimension']
-            miny = form.cleaned_data['Min_Y_dimension']
-            has_boundingboxes = form.cleaned_data['Bounding_Boxes']
+            scale = form.cleaned_data['scale']
+            neighbors = form.cleaned_data['neighbors']
+            minx = form.cleaned_data['min_x_dimension']
+            miny = form.cleaned_data['min_y_dimension']
+            has_boundingboxes = form.cleaned_data['bounding_boxes']
             if has_recognition != 'No':
                 recognizer_name = form.cleaned_data['recognizer']
             else:
@@ -165,7 +170,7 @@ def complex_detection(request):
                                                             scale, neighbors,
                                                             minx, miny,
                                                             has_bounding_boxes=has_boundingboxes,
-                                                            has_obj_det=True),
+                                                            has_obj_det=has_detection),
                                object_detection.s())()
                 (framesdir, objects, names) = result.get()
                 log.debug('lalala: {}'.format(framesdir))
@@ -175,8 +180,12 @@ def complex_detection(request):
 
             log.debug("The annotated video path is {}".format(video_store_path))
 
-            video_serve_path = os.path.join(settings.STATIC_ROOT, 'video.mp4')
-            shutil.copyfile(video_store_path, video_serve_path)
+            # TO TEST
+            shutil.copy(video_store_path, settings.STATIC_ROOT)
+            video_serve_path = os.path.join(settings.STATIC_ROOT,
+                                            os.path.basename(video_store_path))
+            os.remove(video_path)
+            os.remove(video_store_path)
             context = {'boldmessage':  'Test Video',
                        'media': os.path.basename(video_serve_path),
                        'names': names,
@@ -184,7 +193,7 @@ def complex_detection(request):
                        'objects': objects}
             return render(request, 'thesis/index.html', context)
         else:
-            log.debug(form.errors.as_table())
+            log.debug(form.errors.as_data())
             form = ComplexDetectionForm()
     else:
         form = ComplexDetectionForm()
@@ -192,6 +201,7 @@ def complex_detection(request):
     return render(request, 'thesis/block.html', {'form': form})
 
 
+# Obsolete
 @csrf_exempt
 def annotate(request):
     if request.method == 'POST':
@@ -228,7 +238,7 @@ def annotate(request):
         if True:
             objects_dict = app.object_detection()
 
-        facesno = app.create_name_dict_from_file(recogn_name)
+        facesno = app.create_name_dict_from_file()
         faces = facesno.dict.keys()
         confidenece = facesno.values()
         objects = objects_dict.keys()
@@ -303,6 +313,7 @@ def configure(request):
     return JsonResponse(resp)
 
 
+# Obsolete
 @csrf_exempt
 def model(request):
     if (request.method == 'POST' and
@@ -345,21 +356,7 @@ def model(request):
         return HttpResponseBadRequest
 
 
-def create_csv(path, separator):
-    label = 0
-    topdir, folder = os.path.split(path)
-    csvpath = os.path.join(topdir, folder+'.csv')
-    with open(csvpath, 'wb') as csvfile:
-        face_writer = csv.writer(csvfile, delimeter=separator)
-        for dirname, dirnames, filenames in os.walk(path):
-            for subdirname in dirnames:
-                subject_path = os.path.join(dirname, subdirname)
-                for filename in os.listdir(subject_path):
-                    abs_path = "%s/%s" % (subject_path, filename)
-                    face_writer.writerow([abs_path, label])
-                label = label + 1
-
-
+# Obsolete
 @Clock.time
 def parse_directory(request):
     dr = "/media/yiorgos/Maxtor/thesis_video/eu_screen_SD/"
@@ -376,20 +373,6 @@ def parse_directory(request):
             App(v, r)
     return HttpResponse("Videos parsed!")
 
-
-def create_name_dict_from_file(rec):
-    if not rec:
-        return
-    d = {}
-    with open(os.path.join('/tmp', 'faces_in_current_video.txt'), 'r') as f:
-        lines = f.readlines()
-        for key in lines:
-            if key in d:
-                d[key] += 1
-            else:
-                d[key] = 1
-    os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
-    return d
 
 def extract_video(video_zipfile):
             if not zipfile.is_zipfile(video_zipfile.temporary_file_path()):

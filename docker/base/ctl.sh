@@ -12,6 +12,7 @@ _postinit() {
     cp -r $FACEREC_APP_DIR/static/recognizer_train_data $FACEREC_MEDIA_DIR
     cp -r $FACEREC_APP_DIR/static/faces $FACEREC_CACHE_DIR
     $FACEREC_APP_DIR/manage.py loaddata prepop
+    # Need it in order for uwsgi to serve images files
     chmod a+w $FACEREC_APP_DIR/static
 }
 

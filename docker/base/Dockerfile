@@ -75,9 +75,10 @@ ADD opencv_dnn /facerec/opencv_dnn
 
 WORKDIR /facerec/opencv_dnn
 
-RUN make
+RUN make clean && make
 
-ENV PATH=/facerec/opencv_dnn:${PATH}
+# Add objdetect excecutable to default path
+RUN mv objdetect /usr/bin
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
 

@@ -25,9 +25,9 @@ class ComplexDetectionForm(forms.Form):
 						    ('KNN', 'LBPH using K-Nearest Neighbor'),
                             ('No', 'Do not recognize faces')],
                             widget=forms.Select(attrs={'class': 'form-control select select-primary', 'data-toggle': 'select'}))
-    Scale = forms.FloatField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}))
-    Neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    Min_X_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    Min_Y_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    Bounding_Boxes = forms.BooleanField()
+    scale = forms.FloatField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}))
+    neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    min_x_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    min_y_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    bounding_boxes = forms.BooleanField(required=False)
     facesdb = forms.FileField(required=False, widget=forms.ClearableFileInput())
