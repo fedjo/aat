@@ -6,10 +6,13 @@
         - [x] Second container build and install the django application
 
 - [X] Fix the HTTP API according to the document
-- [X] Create view to upload zip with faces to recognize
-    - [x] Need to add logic to the views
-    - [x] Create faces.csv  and face_label.txt from the view
-    - [ ] Test the API calls
+- [ ]  API calls [0]
+    - [ ] Train Model + List Models
+    - [ ] Train cascade + List Cascades
+    - [ ] Add configuration and Upload video? or resolve Video url?
+    - [ ] Send back annotation metadata in JSON
+        - [ ] Create aggragated metadata from every annotation process in the form of shotlist
+- [ ] Emebed Tensorflow for object detection instead of opencv_dnn module
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
 - [ ] Normalize face detection results
@@ -19,18 +22,21 @@
 - [x] Add celery for asynchronous tasks
     - [x] Create tasks for face detection/ face recognition/ object detection
     - [x] Fix celery tasks time limits to handle long detection tasks [1]
-- [ ] Add authentication system
+- [ ] Give option to user to detect/recognize every X frames
+- [ ] Automatically select every how many frames will run the annotation process
 - [ ] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
-- [ ] Landmark/Location detection
+- [ ] Add authentication system -> Integration with SSO
 
 
 
 ---- Not priority ----
 
-- [ ] Refactor django application using django rest framework plugin
 - [ ] Try to solve issues with py-faster rcnn
 - [ ] Embedd py-faster rcnn to the application
 - [ ] Gender classification
+- [ ] Age classification
+- [ ] Landmark/Location detection
 
 
+[0] https://philsturgeon.uk/api/2016/01/04/http-rest-api-file-uploads/
 [1] http://docs.celeryproject.org/en/latest/userguide/workers.html#time-limits
