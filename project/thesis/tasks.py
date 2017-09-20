@@ -15,6 +15,7 @@ from django.conf import settings
 
 from .models import Cascade
 from .utils.video_utils import configure_recognizer
+from .utils.general_utils import exec_cmd
 
 
 log = logging.getLogger(__name__)
@@ -182,18 +183,15 @@ def object_detection(self, faces_and_frames):
 
     cmd = ['objdetect']
     for frame_name in os.listdir(frames_temp_path):
-        try:
-            cmd.append(os.path.join(frames_temp_path, frame_name))
-            p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = p.communicate()
-            cmd.pop()
-            if stdout:
-                objclass = stdout[stdout.find('\'')+1:stdout.find('Probability')-2]
-                probability = stdout[stdout.find('Probability')+13:stdout.find('%')+1]
-                detectd_frames[frame_name] = (objclass, probability)
-        except:
-            log.error("Unexpected error: {}".format(sys.exc_info()[0]))
-            raise
+        cmd.append(os.path.join(frames_temp_path, frame_name))
+        stdout = exec_cmd(cmd)
+        # p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
+        # stdout, stderr = p.communicate()
+        # cmd.pop()
+        if stdout:
+            objclass = stdout[stdout.find('\'')+1:stdout.find('Probability')-2]
+            probability = stdout[stdout.find('Probability')+13:stdout.find('%')+1]
+            detectd_frames[frame_name] = (objclass, probability)
     #shutil.rmtree(frames_temp_path)
     return (frames_temp_path, detectd_frames, faces_count)
 
@@ -203,27 +201,12 @@ def transcribe(self, video_path):
     log.debug("Start transcribing video")
 
     cmd = ['autosub',  video_path]
-    try:
-        p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        cmd.pop()
-        log.debug(os.listdir(os.path.abspath(video_path)))
-        if stdout:
-            srt_path = video_path[:-4] + '.srt'
-    except:
-        log.error("Unexpected error: {}".format(sys.exc_info()[0]))
-        raise
+    stdout = exec_cmd(cmd)
+    srt_path = video_path[:-4] + '.srt'
+
     #shutil.rmtree(frames_temp_path)
     cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
            '-c', 'copy', '-c:s', 'mov_text', video_path]
-    try:
-        p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        cmd.pop()
-        log.debug(os.listdir(os.path.abspath(video_path)))
-    except:
-        log.error("Unexpected error: {}".format(sys.exc_info()[0]))
-        raise
+    stdout = exec_cmd(cmd)
 
     return
-

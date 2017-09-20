@@ -18,6 +18,7 @@ class ComplexDetectionForm(forms.Form):
 
     title = "Please upload your video in zip format"
     video = forms.FileField(required=True, widget=forms.ClearableFileInput())
+    subtitles = forms.BooleanField(required=False)
     iszip = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect(attrs={'data-toggle': 'radio'}))
     recognizer = forms.ChoiceField(choices=[('LBPH', 'Local Binary Patterns Histogram'),
 						    ('EF', 'Eighen Faces'),

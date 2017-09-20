@@ -97,3 +97,18 @@ def create_name_dict_from_file():
                     d[key] = 1
         os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
     return d
+
+
+def exec_cmd(cmd):
+    try:
+        p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        cmd.pop()
+        if stdout:
+            log.debug(stdout)
+    except Exception as e:
+        log.error("Unexpected error: {}".format(str(e)))
+        log.error(stderr)
+        raise
+    return stdout
+

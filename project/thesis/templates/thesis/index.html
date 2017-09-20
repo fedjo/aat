@@ -104,9 +104,10 @@ function myFunction(bool, objbool) {
               </video> -->
 
               <div id="vjs_video_3" data-setup="{}" poster="{% static 'images/lena.png' %}" preload="auto"
-                                                                                            class="video-js vjs-paused vjs-controls-disabled vjs-user-inactive" style="width: 950px; height: 550px;">
-                <video width="950" height="550" class="vjs-tech" preload="auto" poster="{% static 'images/lena.png' %}" data-setup='{ "playbackRates": [0.5, 1, 1.5, 2] }' id="vjs_video_3_html5_api">
-                  <source src="{% static  media %}" type="video/mp4">
+                    class="video-js vjs-paused vjs-controls-disabled vjs-user-inactive" style="width: 950px; height: 550px;">
+                <video width="950" height="550" class="vjs-tech" preload="auto" poster="{% static 'images/lena.png' %}"
+                    data-setup='{ "playbackRates": [0.5, 1, 1.5, 2] }' id="vjs_video_3_html5_api">
+                  <source src="{% static  media %}" type="video/mp4"/>
                 </video>
               </div>
               <ul class="list-group">
@@ -116,18 +117,6 @@ function myFunction(bool, objbool) {
                   {{ key }}
                 </li>
                 {% endfor %}
-                <!--<li class="list-group-item">
-                  <span class="badge">14</span>
-                  Cras justo odio
-                  </li>
-                  <li class="list-group-item">
-                  <span class="badge">4</span>
-                  Cras justo odio
-                  </li>
-                  <li class="list-group-item">
-                  <span class="badge">1</span>
-                  Cras justo odio
-                  </li>-->
               </ul>
               <button type="button" class="btn  btn-lg btn-embossed btn-primary"
                                     data-toggle="modal"

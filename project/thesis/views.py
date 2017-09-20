@@ -20,7 +20,8 @@ from .forms import ComplexDetectionForm, DefaultDetectionForm
 from utils.clock_utils import Clock
 from utils.video_utils import create_annotated_video_path
 from utils.general_utils import create_name_dict_from_file
-from thesis.tasks import face_detection_recognition, object_detection
+from thesis.tasks import face_detection_recognition, object_detection, \
+                        transcribe
 
 
 log = logging.getLogger(__name__)
@@ -149,6 +150,7 @@ def complex_detection(request):
             minx = form.cleaned_data['min_x_dimension']
             miny = form.cleaned_data['min_y_dimension']
             has_boundingboxes = form.cleaned_data['bounding_boxes']
+            has_subtitles = form.cleaned_data['subtitles']
             if has_recognition != 'No':
                 recognizer_name = form.cleaned_data['recognizer']
                 has_detection = False
@@ -173,6 +175,7 @@ def complex_detection(request):
                                                             has_bounding_boxes=has_boundingboxes,
                                                             has_obj_det=has_detection),
                                object_detection.s())()
+                result_sbts = transcribe.delay(video_path)
                 (framesdir, objects, names) = result.get()
                 log.debug('lalala: {}'.format(framesdir))
                 log.debug('Name: {}'.format(names))
