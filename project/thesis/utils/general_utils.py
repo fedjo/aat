@@ -62,7 +62,7 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
     with open(csv_path, 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
         for row in reader:
-            face_labelsDict[int(row[1])] = str(row[0]).split('/')[2]
+            face_labelsDict[int(row[1])] = str(row[0]).split('/')[5]
             image = cv2.imread(os.path.join(settings.STATIC_ROOT, str(row[0])))
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             main_faces = cascade.detectMultiScale(gray, 1.1, 6)
@@ -73,9 +73,14 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
                 labels.append(int(row[1]))
                 if recogn_name == 'LBPH':
                     faces_db.append(gray[y:y+h, x:x+w])
+                    # labels.append(int(row[1]))
+                    # faces_db.append(cv2.resize(gray[y:y+h, x:x+w], size))
                 else:
                     faces_db.append(cv2.resize(gray[y:y+h, x:x+w], size))
+    log.debug("read_csv_file parameters")
     log.debug(face_labelsDict)
+    log.debug("Len of faces_db: " + str(len(faces_db)))
+    log.debug("Labels: " + str(labels))
     return (face_labelsDict, faces_db, labels)
 
 

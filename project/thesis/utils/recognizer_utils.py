@@ -33,8 +33,10 @@ class Recognizer(object):
                                            '-' + str(self.size[0]) + 'x' +
                                            str(self.size[1]) + '.yml')
         if self.recongnName == 'LBPH':
+            # pretrained_filepath = os.path.join(self.train_data_dir,
+            #                                   'mecanex_LBPHfaces_model_5.yml')
             pretrained_filepath = os.path.join(self.train_data_dir,
-                                               'mecanex_LBPHfaces_model_5.yml')
+                                               'mecanex_LBPHfaces_plus_Tajani.yml')
         if os.path.exists(pretrained_filepath):
             log.debug("Loading existing pretrained file: {}"
                       .format(pretrained_filepath))
@@ -56,11 +58,13 @@ class Recognizer(object):
             # gray_frame = cv2.cvtColor(org_img, cv2.COLOR_BGR2GRAY)
             # for (x,y,w,h) in frames:
             conf = 0.0
-            if (self.recongnName is not 'LBPH') and (self.recongnName is not 'KNN'):
+            if ((not self.recongnName == 'LBPH') and
+                (not self.recongnName == 'KNN')):
                 # Eigen/Fisher face recognizer
+                log.debug('Eighen prediction:' + self.recongnName)
                 gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], self.size)
                 nbr_pred, conf = self.recognizer.predict(gray_resized)
-            elif self.recognizer is 'KNN':
+            elif (self.recognizer == 'KNN'):
                 # KNN-LBPH recognizer
                 nbr_pred, conf = self.recognizer.predict_knn(
                         gray_img[y: y+h, x: x+w], 15, True, 5)

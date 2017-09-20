@@ -68,6 +68,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                     f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
                     f.write('---Recognition time---\n')
                     f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
+                log.debug('Name2: {}'.format(faces_count))
                 out.release()
                 cap.release()
                 return frames_temp_path, faces_count
@@ -177,7 +178,7 @@ def object_detection(self, faces_and_frames):
     frames_temp_path, faces_count = faces_and_frames
     detectd_frames = dict()
     if not frames_temp_path:
-        return detectd_frames
+        return (frames_temp_path, detectd_frames, faces_count)
 
     cmd = ['objdetect']
     for frame_name in os.listdir(frames_temp_path):

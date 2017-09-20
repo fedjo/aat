@@ -142,7 +142,7 @@ def complex_detection(request):
             #has_detection = request.POST['objdetection']
             has_detection = True
 
-            faces_path = os.path.join(settings.CACHE_ROOT, 'faces/')
+            faces_path = os.path.join(settings.CACHE_ROOT, 'faces', 'lucce_thesisdb')
             haarcascades = [1]
             scale = form.cleaned_data['scale']
             neighbors = form.cleaned_data['neighbors']
@@ -151,6 +151,7 @@ def complex_detection(request):
             has_boundingboxes = form.cleaned_data['bounding_boxes']
             if has_recognition != 'No':
                 recognizer_name = form.cleaned_data['recognizer']
+                has_detection = False
             else:
                 recognizer_name = ''
 
@@ -174,6 +175,7 @@ def complex_detection(request):
                                object_detection.s())()
                 (framesdir, objects, names) = result.get()
                 log.debug('lalala: {}'.format(framesdir))
+                log.debug('Name: {}'.format(names))
             except Exception as e:
                 log.debug(str(e))
                 return HttpResponseBadRequest("Video cannot be opened!")
