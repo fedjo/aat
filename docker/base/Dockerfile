@@ -1,6 +1,9 @@
 FROM ubuntu:trusty
 
-RUN apt-get update && apt-get install --fix-missing -y \
+# Install build essentials
+RUN set -x && \
+    apt-get update -q && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     python \
     gcc \
     apt-utils \
@@ -12,32 +15,46 @@ RUN apt-get update && apt-get install --fix-missing -y \
     pkg-config \
     sqlite3
 
-RUN apt-get install -y \
+# Install image libs
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     libjpeg8-dev \
     libtiff4-dev \
     libjasper-dev \
     libpng12-dev
 
-RUN apt-get install -y \
+# Install gtk
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     libgtk2.0-dev
 
-RUN apt-get install -y \
+# Install video libs
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     libavcodec-dev \
     libavformat-dev \
     libswscale-dev \
     libv4l-dev
 
-RUN pip install numpy
-    #django \
-    #cffi \
-    #virtualenv \
-    #virtualenvwrapper \
-    #numpy
+# Install ffmpeg
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
+    software-properties-common python-software-properties && \
+    add-apt-repository -y ppa:mc3man/trusty-media && \
+    apt-get update -q && \
+    apt-get install --no-install-recommends --fix-missing -yq \
+    ffmpeg \
+    libgstreamer1.0-dev libgstreamer0.10-dev \
+    libgstreamer-plugins-bad0.10-dev gstreamer0.10-plugins-ugly \
+    libgstreamer-plugins-base0.10-dev gstreamer0.10-plugins-good \
+    libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-ugly \
+    libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev && \
+    apt-get autoremove -yq && \
+    apt-get clean -q && rm -rf /var/lib/apt/lists/*
 
-#RUN export WORKON_HOME=$HOME/.virtualenvs && \
-    #source /usr/local/bin/virtualenvwrapper.sh
-
-#RUN mkvirtualenv cv3
+# Install numpy, uwsgi
+RUN pip install numpy  uwsgi && \
+    find / -name '*.py[co]' -delete
 
 # Add source code of OpenCV
 COPY opencv/ /facerec/opencv
@@ -75,17 +92,10 @@ ADD opencv_dnn /facerec/opencv_dnn
 
 WORKDIR /facerec/opencv_dnn
 
-RUN make clean && make
+#RUN make clean && make
 
-# Add objdetect excecutable to default path
-RUN mv objdetect /usr/bin
+## Add objdetect excecutable to default path
+#RUN mv objdetect /usr/bin
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
-
-# Install ffmpeg
-RUN apt-get install -y software-properties-common python-software-properties && \
-    add-apt-repository -y ppa:mc3man/trusty-media && \
-    apt-get update && \
-    apt-get install -y \
-    ffmpeg
 

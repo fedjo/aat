@@ -2,7 +2,11 @@ FROM opencv
 
 ADD requirements.txt /tmp
 
-RUN pip install -r /tmp/requirements.txt
+#RUN pip install -U setuptools pip && \ 
+    #find / -name '*.py[co]' -delete
+
+RUN pip install -r /tmp/requirements.txt && \ 
+    find / -name '*.py[co]' -delete
 
 # Add source code
 COPY docker /facerec/docker
