@@ -11,6 +11,13 @@ import tempfile
 from subprocess import PIPE
 from celery import shared_task
 
+# Tensorflow imports
+import numpy as np
+import tensorflow as tf
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as vis_util
+# ##################
+
 from django.conf import settings
 
 from .models import Cascade
