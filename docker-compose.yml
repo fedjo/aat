@@ -9,7 +9,7 @@ services:
     depends_on:
       - celery
   init:
-    image: producer/dev:latest
+    image: producer/dev:opencv-3.3.0
     command: facerec-ctl init dev
     volumes:
       - .:/facerec:rw
@@ -17,7 +17,8 @@ services:
       - cache:/data/cache:rw
       - static:/facerec/project/static:rw
       - ./project/db:/data/db:rw
-      - /media/lebowski/Maxtor1/thesis_video/:/thesis_video:rw
+      #- /media/lebowski/Maxtor1/thesis_video/:/thesis_video:rw
+      - /home/yiorgos/Downloads/:/local/Dowloads:rw
   celery:
     extends: init
     command: facerec-ctl celery
