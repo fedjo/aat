@@ -204,6 +204,125 @@ def object_detection(self, faces_and_frames):
 
 
 @shared_task(bind=True)
+def object_detection2(self, video_path, video_store_path):
+
+    log.debug('Trying to open video {}'.format(video_path))
+    cap = cv2.VideoCapture(video_path)
+    fourcc = cap.get(cv2.CAP_PROP_FOURCC)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    # This is the avi codec
+    # fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    # This is the mp4 codec
+    mp4fourcc = cv2.VideoWriter_fourcc(*'H264')
+    out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
+
+    if not(cap.isOpened()):
+        log.debug("Cannot open video path {}".format(video_path))
+        raise Exception('Cannot open video')
+        return ''
+
+    CWD_PATH = os.path.join(os.getenv('FACEREC_APP_DIR', '..'), 'thesis') 
+
+    # Path to frozen detection graph. This is the actual model that is used for the object detection.
+    MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+    PATH_TO_CKPT = os.path.join(CWD_PATH, 'object_detection', MODEL_NAME, 'frozen_inference_graph.pb')
+
+    # List of the strings that is used to add correct label for each box.
+    PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
+
+    NUM_CLASSES = 90
+
+    # Loading label map
+    label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+    categories = label_map_util.convert_label_map_to_categories(label_map,
+                                                                max_num_classes=NUM_CLASSES,
+                                                                use_display_name=True)
+    category_index = label_map_util.create_category_index(categories)
+
+    detection_time = 0
+    i = 0
+    log.debug('Start reading and writing frames')
+    try:
+        while(cap.isOpened()):
+            retval, frame = cap.read()
+            if not frame is None:
+                # Get the current frame in grayscale
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            else:
+                with open(os.path.join(settings.MEDIA_ROOT,
+                                       'timelapse.log'), 'a') as f:
+                    f.write('---Object Detection time---\n')
+                    f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
+                log.debug('Parsed whole video. End of Frames!')
+                out.release()
+                cap.release()
+
+            # optional implementation to use all/selected haar cascades
+            det_start = time.time()
+
+            # frame_with_objects = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_with_objects = frame.copy()
+            detection_graph = tf.Graph()
+            with detection_graph.as_default():
+                od_graph_def = tf.GraphDef()
+                with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+                    serialized_graph = fid.read()
+                    od_graph_def.ParseFromString(serialized_graph)
+                    tf.import_graph_def(od_graph_def, name='')
+
+                sess = tf.Session(graph=detection_graph)
+
+             # Expand dimensions since the model expects images to have shape:
+             # [1, None, None, 3]
+            frame_expanded = np.expand_dims(frame_with_objects, axis=0)
+            frame_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+
+            # Each box represents a part of the image where a 
+            # particular object was detected.
+            boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+
+            # Each score represent how level of confidence for each of the objects.
+            # Score is shown on the result image, together with the class label.
+            scores = detection_graph.get_tensor_by_name('detection_scores:0')
+            classes = detection_graph.get_tensor_by_name('detection_classes:0')
+            num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+
+            # Actual detection
+            (boxes, scores, classes, num_detections) = sess.run(
+                [boxes, scores, classes, num_detections],
+                feed_dict={frame_tensor: frame_expanded})
+
+            # Visualization of the results
+            vis_util.visualize_boxes_labels_on_image_array(
+                frame_with_objects,
+                np.squeeze(boxes),
+                np.squeeze(classes).astype(np.int32),
+                np.squeeze(scores),
+                category_index,
+                use_normalized_coordinates=True,
+                line_thickness=8)
+
+            det_end = time.time()
+            detection_time += det_end - det_start
+
+            # Write frame to video file
+            try:
+                out.write(cv2.resize(frame_with_objects, (640, 480)))
+            except Exception as e:
+                log.error("Cannot write new frame to video")
+                log.error(str(e))
+            i += 1
+
+    except Exception as e:
+        log.error(str(e))
+        out.release()
+        cap.release()
+
+    out.release()
+    cap.release()
+
+
+@shared_task(bind=True)
 def transcribe(self, video_path):
     log.debug("Start transcribing video")
 
