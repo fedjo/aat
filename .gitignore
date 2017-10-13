@@ -16,3 +16,4 @@ tests/.coverage
 build/
 tests/report/
 *.vim
+*.tmp

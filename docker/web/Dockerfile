@@ -2,10 +2,10 @@ FROM opencv
 
 ADD requirements.txt /tmp
 
-#RUN pip install -U setuptools pip && \ 
+#RUN pip install -U setuptools pip && \
     #find / -name '*.py[co]' -delete
 
-RUN pip install -r /tmp/requirements.txt && \ 
+RUN pip install -r /tmp/requirements.txt && \
     find / -name '*.py[co]' -delete
 
 # Add source code

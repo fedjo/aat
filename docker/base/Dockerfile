@@ -56,16 +56,18 @@ RUN set -x && \
 RUN pip install numpy  uwsgi && \
     find / -name '*.py[co]' -delete
 
+# Switch working directory to source code.
+WORKDIR /facerec
+
 # Add source code of OpenCV
 COPY opencv/ /facerec/opencv
 
 # Add source code of OpenCV contrib
 COPY opencv_contrib /facerec/opencv_contrib
 
-# Switch working directory to source code.
-WORKDIR /facerec
-
-# Build and install OpenCV
+# Build, install OpenCV
+# then delete source code directories to
+# eliminate space
 RUN cd opencv && \
     mkdir build && \
     cd build && \
@@ -79,23 +81,27 @@ PYTHON2_NUMPY_INCLUDE_DIRS=/usr/local/lib/python2.7/dist-packages/numpy/core/inc
     -D INSTALL_PYTHON_EXAMPLES=OFF \
     -D OPENCV_EXTRA_MODULES_PATH=/facerec/opencv_contrib/modules \
     -D BUILD_EXAMPLES=OFF .. && \
-    make -j8
-
-RUN cd opencv/build && \
+    make -j8 && \
     make install && \
-    ldconfig
+    ldconfig && \
+    cd /facerec && \
+    rm -rf opencv/ opencv_contrib/
 
 RUN cp /usr/local/lib/python2.7/dist-packages/cv2.so /usr/lib/python2.7/dist-packages
 
-# Add source code of opencv_dnn
-ADD opencv_dnn /facerec/opencv_dnn
-
-WORKDIR /facerec/opencv_dnn
-
-#RUN make clean && make
-
-## Add objdetect excecutable to default path
-#RUN mv objdetect /usr/bin
-
 ENV LD_LIBRARY_PATH=/usr/local/lib
+
+# Install protobuf essentials
+RUN set -x && \
+    apt-get update -q && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
+    protobuf-compiler && \
+    apt-get autoremove -yq && \
+    apt-get clean -q && rm -rf /var/lib/apt/lists/*
+
+# Copy tensorflow object detection module
+COPY models/research/object_detection /facerec/object_detection
+
+# Copy tensorflow slim module
+COPY models/research/slim /facerec/slim
 

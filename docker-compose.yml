@@ -9,7 +9,7 @@ services:
     depends_on:
       - celery
   init:
-    image: producer/dev:opencv-3.3.0
+    image: producer/dev:cv3.3
     command: facerec-ctl init dev
     volumes:
       - .:/facerec:rw
