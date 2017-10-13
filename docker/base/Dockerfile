@@ -11,8 +11,6 @@ RUN set -x && \
     python-pip \
     build-essential \
     cmake \
-    wget \
-    unzip \
     libffi6 \
     pkg-config \
     sqlite3 && \
@@ -102,14 +100,23 @@ COPY models/research/object_detection /facerec/object_detection
 COPY models/research/slim /facerec/slim
 
 # Install protobuf compiler 3.3 and compile Protobufs
-RUN mkdir /opt/protoc_3.3 && \
+RUN set -x && \
+    apt-get update -q && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
+    unzip \
+    wget && \
+    mkdir /opt/protoc_3.3 && \
     cd /opt/protoc_3.3 && \
     wget https://github.com/google/protobuf/releases/download/v3.3.0/protoc-3.3.0-linux-x86_64.zip && \
     chmod 775 protoc-3.3.0-linux-x86_64.zip && \
     unzip protoc-3.3.0-linux-x86_64.zip && \
     cd /facerec && \
     /opt/protoc_3.3/bin/protoc object_detection/protos/*.proto --python_out=. && \
-    rm -rf /opt/protoc_3.3
+    rm -rf /opt/protoc_3.3 && \
+    apt-get remove -y wget unzip && \
+    apt-get autoremove -yq && \
+    apt-get clean -q && rm -rf /var/lib/apt/lists/*
+
 
 # Extend python environment
-ENV PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
+ENV PYTHONPATH=$PYTHONPATH:/facerec:/facerec/slim

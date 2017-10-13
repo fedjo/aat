@@ -12,7 +12,6 @@ services:
     image: producer/dev:cv3.3
     command: facerec-ctl init dev
     volumes:
-      - .:/facerec:rw
       - media:/data/media:rw
       - cache:/data/cache:rw
       - static:/facerec/project/static:rw
