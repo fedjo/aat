@@ -1,6 +1,9 @@
 FROM ubuntu:trusty
 
-RUN apt-get update && apt-get install --fix-missing -y \
+# Install build essentials
+RUN set -x && \
+    apt-get update -q && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     python \
     gcc \
     apt-utils \
@@ -8,85 +11,105 @@ RUN apt-get update && apt-get install --fix-missing -y \
     python-pip \
     build-essential \
     cmake \
+    wget \
+    unzip \
     libffi6 \
-    pkg-config
+    pkg-config \
+    sqlite3 && \
+    pip install --upgrade pip setuptools && \
+    find / -name '*.py[co]' -delete
 
-RUN apt-get install -y \
+# Install image libs
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     libjpeg8-dev \
     libtiff4-dev \
     libjasper-dev \
     libpng12-dev
 
-RUN apt-get install -y \
+# Install gtk
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     libgtk2.0-dev
 
-RUN apt-get install -y \
+# Install video libs
+RUN set -x && \
+    apt-get install --no-install-recommends --fix-missing -yq  \
     libavcodec-dev \
     libavformat-dev \
     libswscale-dev \
     libv4l-dev
 
-RUN pip install numpy 
-    #django \
-    #cffi \
-    #virtualenv \
-    #virtualenvwrapper \
-    #numpy
-
-#RUN export WORKON_HOME=$HOME/.virtualenvs && \
-    #source /usr/local/bin/virtualenvwrapper.sh
-
-#RUN mkvirtualenv cv3
-
-# Set environmental variables.
-ENV DJANGO_SETTINGS_MODULE=project.settings \
-    FACEREC_CONFIG=/facerec/docker/base/config.py \
-    FACEREC_DIR=/facerec \
-    FACEREC_APP_DIR=/FACEREC/project \
-    FACEREC_MEDIA_DIR=/data/media \
-    FACEREC_CACHE_DIR=/data/cache \
-    UWSGI_HTTP_SOCKET=0.0.0.0:8000 \
-    UWSGI_PROCESSES=4 \
-    CELERY_PROCESSES=4 \
-    FACEREC_USER=facerec \
-    FACEREC_GROUP=facerec \
-    HOME=/home/facerec
-
-# Create non root user and groups.
+# Install ffmpeg
 RUN set -x && \
-    groupadd --system --gid 1000 $FACEREC_GROUP && \
-    useradd --system --gid $FACEREC_GROUP --uid 1000 -m $FACEREC_USER
+    apt-get install --no-install-recommends --fix-missing -yq  \
+    software-properties-common python-software-properties && \
+    add-apt-repository -y ppa:mc3man/trusty-media && \
+    apt-get update -q && \
+    apt-get install --no-install-recommends --fix-missing -yq \
+    ffmpeg \
+    libgstreamer1.0-dev libgstreamer0.10-dev \
+    libgstreamer-plugins-bad0.10-dev gstreamer0.10-plugins-ugly \
+    libgstreamer-plugins-base0.10-dev gstreamer0.10-plugins-good \
+    libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-ugly \
+    libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev && \
+    apt-get autoremove -yq && \
+    apt-get clean -q && rm -rf /var/lib/apt/lists/*
 
-# Add source code.
-COPY . /facerec
-
-# Run link to brainance-ctl.
-RUN ln -s $FACEREC_DIR/docker/base/ctl.sh /usr/local/bin/facerec-ctl
+# Install numpy, uwsgi
+RUN pip install numpy  uwsgi && \
+    find / -name '*.py[co]' -delete
 
 # Switch working directory to source code.
-WORKDIR $FACEREC_APP_DIR
+WORKDIR /facerec
 
-# Define volumes.
-VOLUME ["$FACEREC_MEDIA_DIR", "$FACEREC_CACHE_DIR"]
+# Add source code of OpenCV
+COPY opencv/ /facerec/opencv
 
-# Define entrypoint.
-ENTRYPOINT ["/facerec/docker/base/entry.sh"]
+# Add source code of OpenCV contrib
+COPY opencv_contrib /facerec/opencv_contrib
 
+# Build, install OpenCV
+# then delete source code directories to
+# eliminate space
 RUN cd opencv && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE \
-    -D CMAKE_INSTALL_PREFIX=/lib \
+#    -D CMAKE_INSTALL_PREFIX=/lib \
     -D PYTHON2_EXECUTABLE=/usr/bin/python2.7 \
     -D PYTHON_INCLUDE_DIR=/usr/include/python2.7 \
     -D \
 PYTHON2_NUMPY_INCLUDE_DIRS=/usr/local/lib/python2.7/dist-packages/numpy/core/include \
     -D INSTALL_C_EXAMPLES=OFF \
     -D INSTALL_PYTHON_EXAMPLES=OFF \
-    -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
+    -D OPENCV_EXTRA_MODULES_PATH=/facerec/opencv_contrib/modules \
     -D BUILD_EXAMPLES=OFF .. && \
-    make -j8
-
-RUN cd opencv/build && \
+    make -j8 && \
     make install && \
-    ldconfig
+    ldconfig && \
+    cd /facerec && \
+    rm -rf opencv/ opencv_contrib/
+
+RUN cp /usr/local/lib/python2.7/dist-packages/cv2.so /usr/lib/python2.7/dist-packages
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
+
+# Copy tensorflow object detection module
+COPY models/research/object_detection /facerec/object_detection
+
+# Copy tensorflow slim module
+COPY models/research/slim /facerec/slim
+
+# Install protobuf compiler 3.3 and compile Protobufs
+RUN mkdir /opt/protoc_3.3 && \
+    cd /opt/protoc_3.3 && \
+    wget https://github.com/google/protobuf/releases/download/v3.3.0/protoc-3.3.0-linux-x86_64.zip && \
+    chmod 775 protoc-3.3.0-linux-x86_64.zip && \
+    unzip protoc-3.3.0-linux-x86_64.zip && \
+    cd /facerec && \
+    /opt/protoc_3.3/bin/protoc object_detection/protos/*.proto --python_out=. && \
+    rm -rf /opt/protoc_3.3
+
+# Extend python environment
+ENV PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
