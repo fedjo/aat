@@ -269,18 +269,23 @@ def annotate(request):
 
 
 @csrf_exempt
-@require_http_methods(['GET', 'POST'])
+@require_http_methods(['GET'])
 def configure(request):
-    if request.method == 'GET':
 
-        cascade = dict()
-        recognizer = dict()
-        objdetector = dict()
+    content = dict()
+    cascade = dict()
+    recognizer = dict()
+    objdetector = dict()
+
+    if ('default' in request.path):
 
         try:
-                c = Configuration.objects.get(current=True)
-        except Configuration.DoesNotExist:
-                c = Configuration.objects.get(pk=1)
+            c = Configuration.objects.get(pk=1)
+        except Configuration.DoesNotExist as e:
+            log.error(e)
+            return HttpResponse(status=500)
+
+        content['path'] = '/path/to/video.mp4'
 
         cascade['name'] = c.cascade_name
         cascade['scale'] = c.cascade_scale
@@ -294,25 +299,18 @@ def configure(request):
 
     else:
 
-        jsonconf = json.loads(request.body)
-        cascade = jsonconf['cascade']
-        recognizer = jsonconf['recognizer']
-        objdetector = jsonconf['objdetector']
+        content['path'] = '/path/to/video.mp4'
 
-        c = Configuration()
-        c.cascade_name = cascade['name']
-        c.cascade_scale = cascade['scale']
-        c.cascade_neighbors = cascade['neighbors']
-        c.cascade_min_face_size = cascade['min_face_size']
-        c.cascade_boxes = cascade['boxes']
+        cascade['name'] = '[1,2,3]'
+        cascade['scale'] = '1.5'
+        cascade['neighnors'] = '5'
+        cascade['min_face_size'] = '30'
+        cascade['boxes'] = 'yes'
 
-        c.recognizer_name = recognizer
-        c.objdetector_name = objdetector
-        c.manual_tags = jsonconf['manual_tags']
+        recognizer['name'] = '["LBPH", "FF", "EF"]'
 
-        # Set this configuration as the default
-        c.current = True
-        c.save()
+        objdetector['name'] = '["default", "tensorflow"]'
+
 
     resp = dict()
     resp['cascade'] = cascade
