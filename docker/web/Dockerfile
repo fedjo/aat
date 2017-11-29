@@ -2,6 +2,8 @@ FROM opencv
 
 ADD requirements.txt /tmp
 ADD requirements.txt .
+ADD setup.py .
+ADD README.md .
 
 RUN pip install -r /tmp/requirements.txt && \
     find / -name '*.py[co]' -delete
