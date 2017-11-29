@@ -7,9 +7,12 @@
 
 - [X] Fix the HTTP API according to the document
 - [ ]  API calls [0]
-    - [ ] Train Model + List Models
+    - [x] POST (upload) zip file with faces and create faces db and create pretained config
+    - [x] GET list of all models uplaoded
+    - [x] GET default and example configuration
+    - [x] POST new configuration
     - [ ] Train cascade + List Cascades
-    - [ ] Add configuration and Upload video? or resolve Video url?
+    - [ ] POST to receive configuration and content and annotate it
     - [ ] Send back annotation metadata in JSON
         - [ ] Create aggragated metadata from every annotation process in the form of shotlist
 - [ ] Emebed Tensorflow for object detection instead of opencv_dnn module
