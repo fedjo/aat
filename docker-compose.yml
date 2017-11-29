@@ -12,12 +12,12 @@ services:
     image: producer/dev:cv3.3
     command: facerec-ctl init dev
     volumes:
+      - ./db:/data/db:rw
+      - ./project:/facerec/project:rw
       - media:/data/media:rw
       - cache:/data/cache:rw
       - static:/facerec/project/static:rw
-      - ./project/db:/data/db:rw
-      #- /media/lebowski/Maxtor1/thesis_video/:/thesis_video:rw
-      - /home/yiorgos/Downloads/:/local/Dowloads:rw
+      - /media/lebowski/Maxtor/thesis_video/:/thesis_video:rw
   celery:
     extends: init
     command: facerec-ctl celery
