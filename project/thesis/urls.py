@@ -9,6 +9,5 @@ urlpatterns = [
         url(r'^annotate', views.annotate, name='annotate'),
         url(r'^configure', views.configure, name='configure'),
         url(r'^model', views.model, name='model'),
-        url(r'^parse', views.parse_directory, name='parse_directory'),
         url(r'^$', views.index, name='index'),
 ]
