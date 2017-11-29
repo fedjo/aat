@@ -62,7 +62,7 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
     with open(csv_path, 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
         for row in reader:
-            face_labelsDict[int(row[1])] = str(row[0]).split('/')[5]
+            face_labelsDict[int(row[1])] = str(row[0]).split('/')[-2:][0]
             image = cv2.imread(os.path.join(settings.STATIC_ROOT, str(row[0])))
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             main_faces = cascade.detectMultiScale(gray, 1.1, 6)

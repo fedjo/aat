@@ -1,4 +1,5 @@
 import os
+import cv2
 import csv
 import json
 import shutil
@@ -9,17 +10,19 @@ from random import randint
 from celery import chain
 
 
+from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, \
         HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.conf import settings
 
-from .models import Configuration, Cascade
+from .models import Configuration, Cascade, RecognizerPreTrainedData
 from .forms import ComplexDetectionForm, DefaultDetectionForm
 from utils.clock_utils import Clock
-from utils.video_utils import create_annotated_video_path
-from utils.general_utils import create_name_dict_from_file
+from utils.video_utils import configure_recognizer, create_annotated_video_path
+from utils.general_utils import create_name_dict_from_file, create_csv_file
 from thesis.tasks import face_detection_recognition, object_detection, \
                         transcribe
 
@@ -266,6 +269,7 @@ def annotate(request):
 
 
 @csrf_exempt
+@require_http_methods(['GET', 'POST'])
 def configure(request):
     if request.method == 'GET':
 
@@ -273,7 +277,11 @@ def configure(request):
         recognizer = dict()
         objdetector = dict()
 
-        c = Configuration.objects.get(pk=1)
+        try:
+                c = Configuration.objects.get(current=True)
+        except Configuration.DoesNotExist:
+                c = Configuration.objects.get(pk=1)
+
         cascade['name'] = c.cascade_name
         cascade['scale'] = c.cascade_scale
         cascade['neighnors'] = c.cascade_neighbors
@@ -284,7 +292,7 @@ def configure(request):
 
         objdetector['name'] = c.objdetector_name
 
-    elif request.method == 'POST':
+    else:
 
         jsonconf = json.loads(request.body)
         cascade = jsonconf['cascade']
@@ -302,13 +310,9 @@ def configure(request):
         c.objdetector_name = objdetector
         c.manual_tags = jsonconf['manual_tags']
 
+        # Set this configuration as the default
+        c.current = True
         c.save()
-
-        # Parse configuration JSON
-        # cascade, recognizer, objdetector = parse_jsonconf(jsonconf)
-
-    else:
-        return HttpResponseBadRequest
 
     resp = dict()
     resp['cascade'] = cascade
@@ -317,27 +321,28 @@ def configure(request):
 
     return JsonResponse(resp)
 
-
-# Obsolete
+# This method has also to create train YAML files
+# according to the faces uploaded for every recognizer
+# Eighen, Fisher, LBPH
 @csrf_exempt
+@require_http_methods(['POST', 'GET'])
 def model(request):
     if (request.method == 'POST' and
-       request.FILES['model']):
+        request.FILES['file']):
 
-        uploadedzip = request.FILES['model']
-        uploadedname = request.FILES['model'].name
-        # Unzip file and parse content
-        zippath = os.path.join(settings.MEDIA_ROOT, 'model.zip')
-        with open(zippath, 'wb+') as destination:
-            for chunk in uploadedzip.chunks():
-                destination.write(chunk)
+        uploadedzip = request.FILES['file']
+        fs = FileSystemStorage()
+        zipname = fs.save(uploadedzip.name, uploadedzip)
+        zippath = os.path.join(settings.MEDIA_ROOT, zipname)
 
         if not zipfile.is_zipfile(zippath):
-            return HttpResponseBadRequest("The is not a zip file")
+            return HttpResponseBadRequest("The uploaded file is not a zip file")
 
-        extractdir = os.path.join(settings.MEDIA_ROOT, 'faces', os.path.splitext(uploadedname))
+        facedbdir = os.path.join(settings.MEDIA_ROOT,
+                                 'faces', os.path.splitext(uploadedzip.name)[0])
+        extractdir = os.path.join(facedbdir, 'faces')
         if os.path.exists(extractdir):
-            extractdir += "_" + str(randint(0, 9))
+            extractdir += "_" + str(randint(0, 50))
         os.makedirs(extractdir)
 
         zip_ref = zipfile.ZipFile(zippath, 'r')
@@ -345,9 +350,13 @@ def model(request):
         zip_ref.close()
         os.remove(zippath)
 
-        # TODO
-        # Create faces.csv and face_labels.txt file
-        create_csv(extractdir, ';')
+        size = (160, 120)
+        if( ('sizex' and 'sizey') in request.POST):
+            size[0] = request.POST['sizex']
+            size[1] = request.POST['sizey']
+
+        for r in ['LBPH', 'EF', 'FF']:
+            configure_recognizer(r, uploadedzip.name, extractdir, size)
 
         people = []
         for facename in os.listdir(extractdir):
@@ -358,25 +367,8 @@ def model(request):
 
         return JsonResponse(resp)
     else:
-        return HttpResponseBadRequest
-
-
-# Obsolete
-@Clock.time
-def parse_directory(request):
-    dr = "/media/yiorgos/Maxtor/thesis_video/eu_screen_SD/"
-    # dr = request.POST['dir']
-    videos = []
-    for(dirpath, dirnames, filenames) in os.walk(dr):
-        for f in filenames:
-            # if f.endswith('.mp4') or f.endswith('.mov'):
-            if f.endswith('.mp4'):
-                videos.append(os.path.join(dirpath, f))
-    # print videos
-    for v in videos:
-        for r in ['LBPH', 'FF', 'EF']:
-            App(v, r)
-    return HttpResponse("Videos parsed!")
+        yamls = RecognizerPreTrainedData.objects.all()
+        return JsonResponse([y.to_dict() for y in yamls], safe=False)
 
 
 def extract_video(video_zipfile):

@@ -4,7 +4,7 @@ from django.db import models
 
 
 class Configuration(models.Model):
-
+    current = models.BooleanField(default=False)
     cascade_name = models.CharField(max_length=50)
     cascade_scale = models.CharField(max_length=50)
     cascade_neighbors = models.CharField(max_length=50)
@@ -27,5 +27,12 @@ class RecognizerPreTrainedData(models.Model):
     name = models.CharField(max_length=50)
     recognizer = models.CharField(max_length=50)
     yml_file = models.FileField(upload_to='recognizer_train_data/')
-    faces_path = models.CharField(max_length=150, blank=True)
+    faces = models.CharField(max_length=500, blank=True)
     csv_path = models.CharField(max_length=150, blank=True)
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'recognizer': self.recognizer,
+            'faces': self.faces
+        }
