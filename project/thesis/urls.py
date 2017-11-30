@@ -3,9 +3,11 @@ from . import views
 
 urlpatterns = [
         url(r'^complexdetection',
-            views.complex_detection, name='complex_detection'),
+            views.form_detection, name='form_detection'),
         url(r'^defaultdetection',
-            views.default_detection, name='default_detection'),
+            views.form_detection, name='form_detection'),
+        url(r'^apidetection',
+            views.api_detection, name='api_detection'),
         url(r'^annotate', views.annotate, name='annotate'),
         url(r'^configure/default', views.configure, name='configure_def'),
         url(r'^configure', views.configure, name='configure'),
