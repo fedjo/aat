@@ -8,13 +8,14 @@
 - [X] Fix the HTTP API according to the document
 - [ ]  API calls [0]
     - [x] POST (upload) zip file with faces and create faces db and create pretained config
-    - [x] GET list of all models uplaoded
+    - [x] GET list of all models uploaded
     - [x] GET default and example configuration
-    - [x] POST new configuration
+    - [x] POST to forms and annotate
+    - [x] POST json to and annoatate
     - [ ] Train cascade + List Cascades
-    - [ ] POST to receive configuration and content and annotate it
     - [ ] Send back annotation metadata in JSON
-        - [ ] Create aggragated metadata from every annotation process in the form of shotlist
+- [ ] Fix video codes on OpenCV to read all kind of videos
+- [ ] Create aggragated metadata from every annotation process in the form of shotlist
 - [ ] Emebed Tensorflow for object detection instead of opencv_dnn module
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
@@ -29,6 +30,7 @@
 - [ ] Automatically select every how many frames will run the annotation process
 - [ ] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
 - [ ] Add authentication system -> Integration with SSO
+- [ ] Process videos as bunch of frames in parallel
 
 
 
