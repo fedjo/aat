@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('thesis', '0001_initial'),
+        ('aat', '0001_initial'),
     ]
 
     operations = [

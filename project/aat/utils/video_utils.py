@@ -6,8 +6,8 @@ import os
 import cv2
 import logging
 
-from thesis.models import Cascade
-from thesis.utils.general_utils import create_csv_file, read_csv_file
+from aat.models import Cascade
+from aat.utils.general_utils import create_csv_file, read_csv_file
 
 
 log = logging.getLogger(__name__)

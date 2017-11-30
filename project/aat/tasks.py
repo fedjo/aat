@@ -221,7 +221,7 @@ def object_detection2(self, video_path, video_store_path):
         raise Exception('Cannot open video')
         return ''
 
-    CWD_PATH = os.path.join(os.getenv('FACEREC_APP_DIR', '..'), 'thesis') 
+    CWD_PATH = os.path.join(os.getenv('FACEREC_APP_DIR', '..'), 'aat')
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
     MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
@@ -277,7 +277,7 @@ def object_detection2(self, video_path, video_store_path):
             frame_expanded = np.expand_dims(frame_with_objects, axis=0)
             frame_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
 
-            # Each box represents a part of the image where a 
+            # Each box represents a part of the image where a
             # particular object was detected.
             boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
 

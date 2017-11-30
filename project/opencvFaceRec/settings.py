@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'revproxy',
-    'thesis'
+    'aat'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -101,7 +101,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'thesis': {
+        'aat': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },

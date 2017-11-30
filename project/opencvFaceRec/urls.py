@@ -37,7 +37,7 @@ class RabbitmqAdminProxyView(AdminProxyView):
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^thesis/', include('thesis.urls')),
+    url(r'^aat/', include('aat.urls')),
 
     # Proxy to several admin applications, only for superusers.
     url(r'^manage/rabbitmq/(?P<path>.*)$',

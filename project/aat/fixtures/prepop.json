@@ -1,6 +1,6 @@
 [
     {
-        "model": "thesis.configuration",
+        "model": "aat.configuration",
         "pk": 1,
         "fields": {
             "cascade_name": "haarcascade_frontalface_alt2.xml",
@@ -16,7 +16,7 @@
 
     },
     {
-        "model": "thesis.cascade",
+        "model": "aat.cascade",
         "pk": 1,
         "fields": {
             "name": "haarcascade_frontalface_alt2.xml",
@@ -25,7 +25,7 @@
 
     },
     {
-        "model": "thesis.cascade",
+        "model": "aat.cascade",
         "pk": 2,
         "fields": {
             "name": "haarcascade_profileface.xml",
@@ -34,7 +34,7 @@
 
     },
     {
-        "model": "thesis.cascade",
+        "model": "aat.cascade",
         "pk": 3,
         "fields": {
             "name": "haarcascade_frontalcatface_extended.xml",
@@ -43,7 +43,7 @@
 
     },
     {
-        "model": "thesis.cascade",
+        "model": "aat.cascade",
         "pk": 4,
         "fields": {
             "name": "haarcascade_frontalcatface.xml",
@@ -52,7 +52,7 @@
 
     },
     {
-        "model": "thesis.cascade",
+        "model": "aat.cascade",
         "pk": 5,
         "fields": {
             "name": "haarcascade_frontalface_default.xml",
@@ -61,7 +61,7 @@
 
     },
     {
-        "model": "thesis.recognizerpretraineddata",
+        "model": "aat.recognizerpretraineddata",
         "pk": 1,
         "fields": {
             "name": "mecanex_LBPHfaces_model_5.yml",
@@ -71,7 +71,7 @@
 
     },
     {
-        "model": "thesis.recognizerpretraineddata",
+        "model": "aat.recognizerpretraineddata",
         "pk": 2,
         "fields": {
             "name": "rec-EF.yml",
@@ -81,7 +81,7 @@
 
     },
     {
-        "model": "thesis.recognizerpretraineddata",
+        "model": "aat.recognizerpretraineddata",
         "pk": 3,
         "fields": {
             "name": "",
@@ -91,7 +91,7 @@
 
     },
     {
-        "model": "thesis.recognizerpretraineddata",
+        "model": "aat.recognizerpretraineddata",
         "pk": 4,
         "fields": {
             "name": "rec-LBPH.yml",
@@ -101,7 +101,7 @@
 
     },
     {
-        "model": "thesis.recognizerpretraineddata",
+        "model": "aat.recognizerpretraineddata",
         "pk": 5,
         "fields": {
             "name": "rec-LBPH2.yml",

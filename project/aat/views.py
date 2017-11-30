@@ -23,7 +23,7 @@ from .forms import ComplexDetectionForm, DefaultDetectionForm
 from utils.clock_utils import Clock
 from utils.video_utils import configure_recognizer, create_annotated_video_path
 from utils.general_utils import create_name_dict_from_file, create_csv_file
-from thesis.tasks import face_detection_recognition, object_detection, \
+from aat.tasks import face_detection_recognition, object_detection, \
                         transcribe
 
 
@@ -36,7 +36,7 @@ def index(request):
         context = {'boldmessage':  'Hello, this is the index page',
                    'form': form,
                    'media': ''}
-        return render(request, 'thesis/index.html', context)
+        return render(request, 'aat/index.html', context)
 
 
 # Obsolete
@@ -216,16 +216,16 @@ def form_detection(request):
         if form.is_valid():
             log.debug(form.__dict__)
             context = process_form(request, form)
-            return render(request, 'thesis/index.html', context)
+            return render(request, 'aat/index.html', context)
         else:
             log.debug(form.errors.as_data())
             return HttpResponseBadRequest("Please sepcify the fields missing in the form")
             vidform = formclass()
-            return render(request, 'thesis/block.html', {'form': vidform})
+            return render(request, 'aat/block.html', {'form': vidform})
     else:
         # GET request forwards to CompleDetectionForm
         vidform = ComplexDetectionForm()
-        return render(request, 'thesis/block.html', {'form': vidform})
+        return render(request, 'aat/block.html', {'form': vidform})
 
 @csrf_exempt
 @require_http_methods(['POST'])

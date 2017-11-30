@@ -8,7 +8,7 @@ import json
 from django.conf import settings
 from django.core.files import File
 
-from thesis.models import RecognizerPreTrainedData
+from aat.models import RecognizerPreTrainedData
 
 log = logging.getLogger(__name__)
 
