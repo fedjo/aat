@@ -41,20 +41,25 @@ def face_detection_recognition(self, video_path, video_store_path,
     fourcc = cap.get(cv2.CAP_PROP_FOURCC)
     fps = cap.get(cv2.CAP_PROP_FPS)
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
+    #out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
+    #_fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    _fourcc = 1446269005 #cv2.cv.CV_FOURCC(*'MP4V')
+    out = cv2.VideoWriter(video_store_path, _fourcc, fps, (640, 480))
 
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
         raise Exception('Cannot open video')
         return ''
 
+    txt_path = os.path.join(settings.CACHE_ROOT,
+                            os.path.basename(video_store_path).split('.')[0]+'.txt')
+
     if recognizer_name:
         (myrecognizer, face_labelsDict) = \
-                configure_recognizer(recognizer_name, faces_path)
+                configure_recognizer(recognizer_name, 'SD_FACES', faces_path)
 
     detection_time = 0
     recognition_time = 0
-    i = 0
     if has_obj_det:
         frames_temp_path = tempfile.mkdtemp(dir=settings.STATIC_ROOT)
         subprocess.call(['chmod', '-R', '+rx', frames_temp_path])
@@ -63,13 +68,12 @@ def face_detection_recognition(self, video_path, video_store_path,
 
     log.debug('Frames temporary path is {}'.format(frames_temp_path))
     log.debug('Start reading and writing frames')
+    faces_count = dict()
+    allface_positions = []
     try:
         while(cap.isOpened()):
-            retval, frame = cap.read()
-            if not frame is None:
-                # Get the current frame in grayscale
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            else:
+            ret_grab = cap.grab()
+            if not ret_grab:
                 with open(os.path.join(settings.MEDIA_ROOT,
                                        'timelapse.log'), 'a') as f:
                     f.write('---Detection time---\n')
@@ -77,33 +81,31 @@ def face_detection_recognition(self, video_path, video_store_path,
                     f.write('---Recognition time---\n')
                     f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
                 log.debug('Name2: {}'.format(faces_count))
-                out.release()
-                cap.release()
-                return frames_temp_path, faces_count
+                break
+
+            # Decode the current frame
+            ret, frame = cap.retrieve()
+            # Get the current frame in grayscale
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             # Keep every 50 frames for object detection
-            if (frames_temp_path and i % 50 == 0):
+            if (frames_temp_path and int(cap.get(1)) % 50 == 0):
                 frame_name = os.path.join(frames_temp_path,
-                                          'frame' + str(i / 50) + '.png')
+                                          'frame' + str(int(cap.get(1)) / 50) + '.png')
                 cv2.imwrite(frame_name, frame)
 
-            # Faces and Profile rects discovered at the current frame
+            # Faces Mat discovered at the current frame
             current_faces = []
-
-            # faces = self.face_cascade.detectMultiScale(gray, scaleFactor=scale,
-            #        minNeighbors=neighbors, minSize=(minx, miny))
-            # profiles = self.profile_cascade.detectMultiScale(gray, scaleFactor=scale,
-            #        minNeighbors=neighbors, minSize=(minx, miny))
 
             # optional implementation to use all/selected haar cascades
             det_start = time.time()
             db_haarcascades = Cascade.objects.filter(pk__in=haarcascades).all()
             for c in db_haarcascades:
                 cascade = cv2.CascadeClassifier(c.xml_file.path)
-                current_faces.extend(
-                        cascade.detectMultiScale(gray, scaleFactor=float(scale),
+                current_faces.extend(cascade.detectMultiScale(gray, scaleFactor=float(scale),
                                                  minNeighbors=int(neighbors),
                                                  minSize=(int(minx), int(miny))))
+                allface_positions.extend(current_faces)
             det_end = time.time()
             detection_time += det_end - det_start
 
@@ -125,7 +127,6 @@ def face_detection_recognition(self, video_path, video_store_path,
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
-            faces_count = dict()
             frame_with_faces = frame.copy()
             for (x, y, w, h) in current_faces:
                 facename_prob = 'person - NaN %'
@@ -167,16 +168,23 @@ def face_detection_recognition(self, video_path, video_store_path,
             except Exception as e:
                 log.error("Cannot write new frame to video")
                 log.error(str(e))
-            i += 1
 
     except Exception as e:
         log.error(str(e))
-        out.release()
-        cap.release()
-        return frames_temp_path, faces_count
 
     out.release()
     cap.release()
+
+    log.debug("Writing file {}".format(txt_path))
+    for (x,y,w,h) in allface_positions:
+        with open(txt_path, 'w') as a:
+            a.write("Frame {}:\n".format(cap.get(1)))
+            a.write("Face in position: ({}, {})\n".format(x, y))
+            a.write("Dimensions: w = {}, h = {}\n".format(w, h))
+    for k, f in faces_count.iteritems():
+        with open(txt_path, 'a') as a:
+            a.write("Face {} found {} times:\n".format(k, f))
+
     return frames_temp_path, faces_count
 
 

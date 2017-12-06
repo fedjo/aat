@@ -41,7 +41,7 @@ def index(request):
 
 # Obsolete
 @csrf_exempt
-def annotate(request):
+def old_annotate(request):
     if request.method == 'POST':
         if request.FILES['video']:
             video_file = request.FILES['video_file']
@@ -229,13 +229,13 @@ def form_detection(request):
 
 @csrf_exempt
 @require_http_methods(['POST'])
-def api_detection(request):
+def annotate(request):
     jsondata = json.loads(request.body)
     #context = process_form(request, jsondata)
     return JsonResponse(jsondata)
 
 
-def process_form(request, form):
+def process_form(request, jsondata):
 
     # Initialize values
     faces_path = os.path.join(settings.CACHE_ROOT, 'faces', 'lucce_thesisdb')
@@ -245,7 +245,9 @@ def process_form(request, form):
     minx = 30
     miny = 30
     has_recognition = request.POST['recognizer']
+    has_recognition = jsondata['recognizer']
     has_detection = request.POST['objdetection']
+    has_detection = jsondata['objdetection']
     has_boundingboxes = True
     has_subtitles = False
 
@@ -337,7 +339,6 @@ def process_form(request, form):
     shutil.copy(video_store_path, settings.STATIC_ROOT)
     video_serve_path = os.path.join(settings.STATIC_ROOT,
                                     os.path.basename(video_store_path))
-    os.remove(video_path)
     os.remove(video_store_path)
     context = {'form':  DefaultDetectionForm(),
                'media': os.path.basename(video_serve_path),

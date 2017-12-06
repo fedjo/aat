@@ -14,8 +14,8 @@
     - [x] POST json to and annoatate
     - [ ] Train cascade + List Cascades
     - [ ] Send back annotation metadata in JSON
-- [ ] Fix video codes on OpenCV to read all kind of videos
-- [ ] Create aggragated metadata from every annotation process in the form of shotlist
+- [x] Fix video codes on OpenCV to read all kind of videos
+- [x] Create aggragated metadata from every annotation process in the form of shotlist
 - [ ] Emebed Tensorflow for object detection instead of opencv_dnn module
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
