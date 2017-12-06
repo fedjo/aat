@@ -24,7 +24,7 @@ from utils.clock_utils import Clock
 from utils.video_utils import configure_recognizer, create_annotated_video_path
 from utils.general_utils import create_name_dict_from_file, create_csv_file
 from aat.tasks import face_detection_recognition, object_detection, \
-                        transcribe
+                        transcribe, object_detection2
 
 
 log = logging.getLogger(__name__)
@@ -37,65 +37,6 @@ def index(request):
                    'form': form,
                    'media': ''}
         return render(request, 'aat/index.html', context)
-
-
-# Obsolete
-@csrf_exempt
-def old_annotate(request):
-    if request.method == 'POST':
-        if request.FILES['video']:
-            video_file = request.FILES['video_file']
-            video_path = video_file.temporary_file_path()
-
-        elif request.POST['video']:
-            # Actually path here is a url which
-            # needs to be resolved`
-            video_url = request.POST['video']
-            #TODO
-            # Resolve video_url and assign it
-            # video_path
-            video_path = ''
-
-        video = Video(video_path)
-        recognizer_name = request.POST['recognizer']
-        if not recognizer_name:
-            recognizer_name = 'LBPH'
-        video.setRecognizer(recognizer_name)
-        video.detectFaces(scale=1.3,
-                          neighbors=3,
-                          minx=30,
-                          miny=30,
-                          useRecognition=True)
-        #video.detectFaces(scale=request.POST['Scale'],
-                          #neighbors=request.POST['Neighbors'],
-                          #minx=request.POST['Min_X_dimension'],
-                          #miny=request.POST['Min_Y_dimension'],
-                          #useRecognition=True)
-
-        # process uploaded file
-        if True:
-            objects_dict = app.object_detection()
-
-        facesno = app.create_name_dict_from_file()
-        faces = facesno.dict.keys()
-        confidenece = facesno.values()
-        objects = objects_dict.keys()
-        probabilities = objects_dict.values()
-
-        resp = dict()
-        meta = dict()
-        tags = dict()
-
-        tags['faces'] = faces
-        tags['confidence'] = confidence
-        tags['objects'] = objects
-        tags['probabilities'] = probabilities
-        resp['meta'] = meta
-        resp['tags'] = tags
-
-        return JsonResponse(resp)
-    else:
-        return HttpResponseBadRequest
 
 
 @csrf_exempt
@@ -202,6 +143,16 @@ def model(request):
         return JsonResponse([y.to_dict() for y in yamls], safe=False)
 
 
+@csrf_exempt
+@require_http_methods(['POST'])
+def annotate(request):
+    jsondata = json.loads(request.body)
+    context = process_form(request, jsondata)
+    with open(context['annotations_file'], 'r') as an:
+        return HttpResponse(an.read())
+    return JsonResponse(jsondata)
+
+
 @Clock.time
 @require_http_methods(['POST', 'GET'])
 def form_detection(request):
@@ -213,9 +164,81 @@ def form_detection(request):
         else:
             formclass = DefaultDetectionForm
             form = formclass(request.POST)
+
         if form.is_valid():
             log.debug(form.__dict__)
-            context = process_form(request, form)
+            jsondata = dict()
+
+            if(isinstance(form, DefaultDetectionForm)):
+
+                jsondata['content'] = dict()
+                jsondata['content']['path'] = request.POST['video_dir']
+
+                jsondata['cascade'] = dict()
+                jsondata['cascade']['name'] = [1]
+                jsondata['cascade']['scale'] = 1.3
+                jsondata['cascade']['neighbors'] = 5
+                jsondata['cascade']['minx'] = 30
+                jsondata['cascade']['miny'] = 30
+
+                jsondata['bounding_boxes'] = 'True'
+                jsondata['transcription'] = 'False'
+
+                if request.POST['recognizer'] == 'true':
+                    jsondata['recognizer'] = dict()
+                    jsondata['recognizer']['name'] = 'LBPH'
+                if request.POST['objdetection'] == 'true':
+                    jsondata['objdetector'] = dict()
+                    jsondata['objdetector']['name'] = 'default'
+
+            elif(isinstance(form, ComplexDetectionForm)):
+                video_file = request.FILES['video']
+                # Handle zip uploaded file
+                if request.POST['iszip'] == 'Yes':
+                    video_file = extract_video(video_file)
+                    if not os.path.exists(video_file):
+                        return HttpResponseBadRequest(video_file)
+                # Handle ZIP faces db if provided
+                if 'facesdb' in request.FILES:
+                    facesdb = request.FILES['facesdb']
+                    if facesdb:
+                        facesdb_path = extract_faces(facesdb)
+                        if not os.path.exists(facesdb_path):
+                            return HttpResponseBadRequest(facesdb_path)
+
+                if isinstance(video_file, basestring):
+                    video_path = video_file
+                else:
+                    shutil.copy(video_file.temporary_file_path(),
+                                settings.CACHE_ROOT)
+                    video_path = os.path.join(settings.CACHE_ROOT,
+                                              os.path.basename(video_file.temporary_file_path()))
+
+                jsondata['content'] = dict()
+                jsondata['content']['path'] = video_path
+
+                jsondata['cascade'] = dict()
+                jsondata['cascade']['name'] = [1]
+                jsondata['cascade']['scale'] = form.cleaned_data['scale']
+                jsondata['cascade']['neighbors'] = form.cleaned_data['neighbors']
+                jsondata['cascade']['minx'] = form.cleaned_data['min_x_dimension']
+                jsondata['cascade']['miny'] = form.cleaned_data['min_y_dimension']
+
+                jsondata['bounding_boxes'] = form.cleaned_data['bounding_boxes']
+                jsondata['transcription'] = form.cleaned_data['subtitles']
+
+                if request.POST['recognizer'] != 'No':
+                    jsondata['recognizer'] = dict()
+                    jsondata['recognizer']['name'] = form.cleaned_data['recognizer']
+                if request.POST['objdetection'] == 'true':
+                    jsondata['objdetector'] = dict()
+                    jsondata['objdetector']['name'] = 'default'
+
+            log.debug('The json created is: ')
+            log.debug(jsondata)
+            context = process_form(request, jsondata)
+            if not context:
+                return HttpResponseBadRequest("Could not process video")
             return render(request, 'aat/index.html', context)
         else:
             log.debug(form.errors.as_data())
@@ -227,112 +250,51 @@ def form_detection(request):
         vidform = ComplexDetectionForm()
         return render(request, 'aat/block.html', {'form': vidform})
 
-@csrf_exempt
-@require_http_methods(['POST'])
-def annotate(request):
-    jsondata = json.loads(request.body)
-    #context = process_form(request, jsondata)
-    return JsonResponse(jsondata)
-
 
 def process_form(request, jsondata):
 
-    # Initialize values
-    faces_path = os.path.join(settings.CACHE_ROOT, 'faces', 'lucce_thesisdb')
-    haarcascades = [1]
-    scale = 1.3
-    neighbors = 5
-    minx = 30
-    miny = 30
-    has_recognition = request.POST['recognizer']
-    has_recognition = jsondata['recognizer']
-    has_detection = request.POST['objdetection']
-    has_detection = jsondata['objdetection']
-    has_boundingboxes = True
-    has_subtitles = False
-
-    if(isinstance(form, DefaultDetectionForm)):
-        video_path = request.POST['video_dir']
-
-        if has_recognition == 'true':
-            recognizer_name = 'LBPH'
-        else:
-            recognizer_name = ''
-        if has_detection == 'true':
-            has_detection = True
-        else:
-            has_detection = False
-
-    elif(isinstance(form, ComplexDetectionForm)):
-        video_file = request.FILES['video']
-        # Handle zip uploaded file
-        if request.POST['iszip'] == 'Yes':
-            video_file = extract_video(video_file)
-            if not os.path.exists(video_file):
-                return HttpResponseBadRequest(video_file)
-        # Handle ZIP faces db if provided
-        if 'facesdb' in request.FILES:
-            facesdb = request.FILES['facesdb']
-            if facesdb:
-                facesdb_path = extract_faces(facesdb)
-                if not os.path.exists(facesdb_path):
-                    return HttpResponseBadRequest(facesdb_path)
-
-        if isinstance(video_file, basestring):
-            video_path = video_file
-        else:
-            shutil.copy(video_file.temporary_file_path(),
-                        settings.CACHE_ROOT)
-            video_path = os.path.join(settings.CACHE_ROOT,
-                                      os.path.basename(video_file.temporary_file_path()))
-
-        scale = form.cleaned_data['scale']
-        neighbors = form.cleaned_data['neighbors']
-        minx = form.cleaned_data['min_x_dimension']
-        miny = form.cleaned_data['min_y_dimension']
-        has_boundingboxes = form.cleaned_data['bounding_boxes']
-        has_subtitles = form.cleaned_data['subtitles']
-
-        if has_recognition != 'No':
-            recognizer_name = form.cleaned_data['recognizer']
-        else:
-            recognizer_name = ''
-        if has_detection == 'true':
-            has_detection = True
-        else:
-            has_detection = False
-
+    faces_path = ''
+    log.debug('Video path is {}'.format(jsondata['content']['path']))
+    if 'recognizer' in jsondata.keys():
+        # Selected facedb for recognition
+        faces_path = os.path.join(settings.CACHE_ROOT, 'faces', 'lucce_thesisdb')
+        log.debug('Selected recognizer is {}'.format(jsondata['recognizer']['name']))
+        log.debug('The faces database has name {}'.format(faces_path))
+        recognizer_name = jsondata['recognizer']['name']
     else:
-        return {}
-
-    log.debug('Video path is {} and recognizer {}'
-              .format(video_path, recognizer_name))
+        recognizer_name = ''
+    # Print values for face detection with Viola-Jones
     log.debug("The values provided are: scale {}, neighbors {},"
               "min x dimension {}, min y dimension {}"
-              .format(scale, neighbors, minx, miny))
+              .format(jsondata['cascade']['scale'], jsondata['cascade']['neighbors'],
+                      jsondata['cascade']['minx'], jsondata['cascade']['miny']))
 
-    video_store_path = create_annotated_video_path(video_path, recognizer_name)
-    annot_text_file = os.path.join(settings.STATIC_ROOT,
-                                   os.path.basename(video_store_path)+'.txt')
+    video_store_path = create_annotated_video_path(jsondata['content']['path'],
+                                                   recognizer_name)
+    annot_text_file = os.path.join(settings.CACHE_ROOT,
+                            os.path.basename(video_store_path).split('.')[0]+'.txt')
     try:
-        result = chain(face_detection_recognition.s(video_path,
+        result = chain(face_detection_recognition.s(jsondata['content']['path'],
                                                     video_store_path,
                                                     recognizer_name,
                                                     faces_path,
-                                                    haarcascades,
-                                                    scale, neighbors,
-                                                    minx, miny,
-                                                    has_bounding_boxes=has_boundingboxes,
-                                                    has_obj_det=has_detection),
+                                                    jsondata['cascade']['name'],
+                                                    jsondata['cascade']['scale'],
+                                                    jsondata['cascade']['neighbors'],
+                                                    jsondata['cascade']['minx'],
+                                                    jsondata['cascade']['miny'],
+                                                    has_bounding_boxes=jsondata['bounding_boxes'],
+                                                    has_obj_det=False),
                        object_detection.s())()
-        if has_subtitles:
-            result_sbts = transcribe.delay(video_path)
+        result2 = object_detection2(jsondata['content']['path'], '/thesis_video/tf.mp4')
+        if jsondata['transcription'] == 'True':
+            result_sbts = transcribe.delay(jsondata['content']['path'])
         (framesdir, objects, names) = result.get()
         log.debug('Directory of frames: {}'.format(framesdir))
         log.debug('Names found by recognition: {}'.format(names))
     except Exception as e:
         log.debug(str(e))
-        return HttpResponseBadRequest("Video cannot be opened!")
+        return {}
 
     # TO TEST
     log.debug("The annotated video path is {}".format(video_store_path))

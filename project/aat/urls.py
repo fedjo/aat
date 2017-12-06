@@ -8,7 +8,6 @@ urlpatterns = [
             views.form_detection, name='form_detection'),
         url(r'^annotate',
             views.annotate, name='annotate'),
-        url(r'^annotate/v1', views.annotate, name='old_annotate'),
         url(r'^configure/default', views.configure, name='configure_def'),
         url(r'^configure', views.configure, name='configure'),
         url(r'^model', views.model, name='model'),

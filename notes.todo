@@ -12,11 +12,17 @@
     - [x] GET default and example configuration
     - [x] POST to forms and annotate
     - [x] POST json to and annoatate
+        - [ ] Better error messages if provided json is invalid!
     - [ ] Train cascade + List Cascades
     - [ ] Send back annotation metadata in JSON
 - [x] Fix video codes on OpenCV to read all kind of videos
 - [x] Create aggragated metadata from every annotation process in the form of shotlist
-- [ ] Emebed Tensorflow for object detection instead of opencv_dnn module
+- [x] Emebed Tensorflow for object detection instead of opencv_dnn module
+- [ ] Create a two separate tasks Face detection/recognition + Object detection \
+        \ that can run autonomous and in parallel. They should have a parameter
+        \ to read X frames per second. They should also create aggregated results
+        \ either to DB or to a another tasks which runs after the finish of the
+        \ previous 2
 - [x] Add docker volume to store data, and fix the whole set up
 - [ ] Normalize face recognition results
 - [ ] Normalize face detection results

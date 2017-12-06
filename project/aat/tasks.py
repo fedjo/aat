@@ -6,9 +6,8 @@ import cv2
 import time
 import shutil
 import logging
-import subprocess
 import tempfile
-from subprocess import PIPE
+import subprocess
 from celery import shared_task
 
 # Tensorflow imports
@@ -43,7 +42,7 @@ def face_detection_recognition(self, video_path, video_store_path,
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     #out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
     #_fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-    _fourcc = 1446269005 #cv2.cv.CV_FOURCC(*'MP4V')
+    _fourcc = 875967048 #cv2.cv.CV_FOURCC(*'MP4V')
     out = cv2.VideoWriter(video_store_path, _fourcc, fps, (640, 480))
 
     if not(cap.isOpened()):
@@ -175,9 +174,11 @@ def face_detection_recognition(self, video_path, video_store_path,
     out.release()
     cap.release()
 
+    # TODO
+    # This piece of code has to be moved whitin the while loo
     log.debug("Writing file {}".format(txt_path))
     for (x,y,w,h) in allface_positions:
-        with open(txt_path, 'w') as a:
+        with open(txt_path, 'a') as a:
             a.write("Frame {}:\n".format(cap.get(1)))
             a.write("Face in position: ({}, {})\n".format(x, y))
             a.write("Dimensions: w = {}, h = {}\n".format(w, h))
@@ -221,18 +222,18 @@ def object_detection2(self, video_path, video_store_path):
     # This is the avi codec
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # This is the mp4 codec
-    mp4fourcc = cv2.VideoWriter_fourcc(*'H264')
-    out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
+    _fourcc = 875967048 # cv2.VideoWrite_fourcc(*'H264')
+    out = cv2.VideoWriter(video_store_path, _fourcc, fps, (640, 480))
 
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
         raise Exception('Cannot open video')
-        return ''
+        return
 
     CWD_PATH = os.path.join(os.getenv('FACEREC_APP_DIR', '..'), 'aat')
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
-    MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+    MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
     PATH_TO_CKPT = os.path.join(CWD_PATH, 'object_detection', MODEL_NAME, 'frozen_inference_graph.pb')
 
     # List of the strings that is used to add correct label for each box.
@@ -248,22 +249,22 @@ def object_detection2(self, video_path, video_store_path):
     category_index = label_map_util.create_category_index(categories)
 
     detection_time = 0
-    i = 0
+    log.debug('Object detection with tensorflow')
     log.debug('Start reading and writing frames')
     try:
         while(cap.isOpened()):
-            retval, frame = cap.read()
-            if not frame is None:
-                # Get the current frame in grayscale
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            else:
+            ret_grab = cap.grab()
+            if not ret_grab:
                 with open(os.path.join(settings.MEDIA_ROOT,
                                        'timelapse.log'), 'a') as f:
-                    f.write('---Object Detection time---\n')
+                    f.write('---TensorFlow Detection time---\n')
                     f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
-                log.debug('Parsed whole video. End of Frames!')
-                out.release()
-                cap.release()
+                break
+
+            if (int(cap.get(1)) % 10 != 0):
+                continue
+            # Decode the current frame
+            ret, frame = cap.retrieve()
 
             # optional implementation to use all/selected haar cascades
             det_start = time.time()
@@ -300,8 +301,9 @@ def object_detection2(self, video_path, video_store_path):
                 [boxes, scores, classes, num_detections],
                 feed_dict={frame_tensor: frame_expanded})
 
+            log.debug("Class: {} and score: {}".format(classes, scores))
             # Visualization of the results
-            vis_util.visualize_boxes_labels_on_image_array(
+            vis_util.visualize_boxes_and_labels_on_image_array(
                 frame_with_objects,
                 np.squeeze(boxes),
                 np.squeeze(classes).astype(np.int32),
@@ -315,19 +317,22 @@ def object_detection2(self, video_path, video_store_path):
 
             # Write frame to video file
             try:
+                log.debug("Write frame")
                 out.write(cv2.resize(frame_with_objects, (640, 480)))
             except Exception as e:
                 log.error("Cannot write new frame to video")
                 log.error(str(e))
-            i += 1
 
     except Exception as e:
         log.error(str(e))
         out.release()
         cap.release()
+        return
 
+    log.debug("Finished TF detection")
     out.release()
     cap.release()
+    return
 
 
 @shared_task(bind=True)

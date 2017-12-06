@@ -2,6 +2,8 @@ import os
 import csv
 import cv2
 import logging
+import subprocess
+from subprocess import PIPE
 
 from django.conf import settings
 
@@ -108,7 +110,6 @@ def exec_cmd(cmd):
             log.debug(stdout)
     except Exception as e:
         log.error("Unexpected error: {}".format(str(e)))
-        log.error(stderr)
         raise
     return stdout
 
