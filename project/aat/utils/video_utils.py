@@ -29,16 +29,30 @@ def configure_recognizer(name, dbname, faces_path, size=(160, 120)):
 
 # Function to return the full path where the
 # annotated video will be saved
-def create_annotated_video_path(filename, recognizer_name):
-    if not recognizer_name:
-        recognizer_name = 'NO_FACE_RECOGNITION'
+def create_annotated_video_path(jsondata):
 
+    filename = jsondata['content']['path']
     if isinstance(filename, TemporaryUploadedFile):
         filepath = filename.temporary_file_path()
     else:
         filepath = filename
 
     filename = os.path.basename(filepath).split('.')[0]
-    newfilename = filename + '-' + recognizer_name + '.mp4'
+
+    newfilename = filename
+    if ('cascade' in jsondata.keys()):
+        newfilename += '-'
+        newfilename += 'facedet'
+        if 'recognizer' in jsondata.keys():
+            newfilename += '-'
+            newfilename += jsondata['recognizer']['name']
+    if('objdetector' in jsondata.keys()):
+        newfilename += '-'
+        newfilename += 'objdet'
+    if ('transcription' in jsondata.keys()):
+        newfilename += '-'
+        newfilename += 'transcibe'
+
+    newfilename += '.mp4'
     log.debug("This is the annotated video name: {}".format(newfilename))
     return os.path.join(settings.CACHE_ROOT, newfilename)
