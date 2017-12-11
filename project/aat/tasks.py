@@ -32,8 +32,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                                recognizer_name, faces_path,
                                haarcascades, scale, neighbors,
                                minx, miny,
-                               has_bounding_boxes,
-                               has_obj_det):
+                               has_bounding_boxes):
 
     log.debug('Trying to open video {}'.format(video_path))
     cap = cv2.VideoCapture(video_path)
@@ -59,16 +58,10 @@ def face_detection_recognition(self, video_path, video_store_path,
 
     detection_time = 0
     recognition_time = 0
-    if has_obj_det:
-        frames_temp_path = tempfile.mkdtemp(dir=settings.STATIC_ROOT)
-        subprocess.call(['chmod', '-R', '+rx', frames_temp_path])
-    else:
-        frames_temp_path = ''
 
-    log.debug('Frames temporary path is {}'.format(frames_temp_path))
     log.debug('Start reading and writing frames')
     faces_count = dict()
-    allface_positions = []
+    allface_positions = dict()
     try:
         while(cap.isOpened()):
             ret_grab = cap.grab()
@@ -87,12 +80,6 @@ def face_detection_recognition(self, video_path, video_store_path,
             # Get the current frame in grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            # Keep every 50 frames for object detection
-            if (frames_temp_path and int(cap.get(1)) % 50 == 0):
-                frame_name = os.path.join(frames_temp_path,
-                                          'frame' + str(int(cap.get(1)) / 50) + '.png')
-                cv2.imwrite(frame_name, frame)
-
             # Faces Mat discovered at the current frame
             current_faces = []
 
@@ -104,7 +91,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                 current_faces.extend(cascade.detectMultiScale(gray, scaleFactor=float(scale),
                                                  minNeighbors=int(neighbors),
                                                  minSize=(int(minx), int(miny))))
-                allface_positions.extend(current_faces)
+                allface_positions[cap.get(1)] = [ a.tolist() for a in current_faces ]
             det_end = time.time()
             detection_time += det_end - det_start
 
@@ -177,39 +164,18 @@ def face_detection_recognition(self, video_path, video_store_path,
     # TODO
     # This piece of code has to be moved whitin the while loo
     log.debug("Writing file {}".format(txt_path))
-    for (x,y,w,h) in allface_positions:
-        with open(txt_path, 'a') as a:
-            a.write("Frame {}:\n".format(cap.get(1)))
-            a.write("Face in position: ({}, {})\n".format(x, y))
-            a.write("Dimensions: w = {}, h = {}\n".format(w, h))
+    #log.debug(allface_positions)
+    for k, v in allface_positions.iteritems():
+        for (x,y,w,h) in v:
+            with open(txt_path, 'a') as a:
+                a.write("Frame {}:\n".format(k))
+                a.write("Face in position: ({}, {})\n".format(x, y))
+                a.write("Dimensions: w = {}, h = {}\n".format(w, h))
     for k, f in faces_count.iteritems():
         with open(txt_path, 'a') as a:
             a.write("Face {} found {} times:\n".format(k, f))
 
-    return frames_temp_path, faces_count
-
-
-@shared_task(bind=True)
-def object_detection(self, faces_and_frames):
-    log.debug("Start detecting objects")
-    frames_temp_path, faces_count = faces_and_frames
-    detectd_frames = dict()
-    if not frames_temp_path:
-        return (frames_temp_path, detectd_frames, faces_count)
-
-    cmd = ['objdetect']
-    for frame_name in os.listdir(frames_temp_path):
-        cmd.append(os.path.join(frames_temp_path, frame_name))
-        stdout = exec_cmd(cmd)
-        # p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-        # stdout, stderr = p.communicate()
-        # cmd.pop()
-        if stdout:
-            objclass = stdout[stdout.find('\'')+1:stdout.find('Probability')-2]
-            probability = stdout[stdout.find('Probability')+13:stdout.find('%')+1]
-            detectd_frames[frame_name] = (objclass, probability)
-    #shutil.rmtree(frames_temp_path)
-    return (frames_temp_path, detectd_frames, faces_count)
+    return allface_positions, faces_count
 
 
 @shared_task(bind=True)
@@ -249,6 +215,7 @@ def object_detection2(self, video_path, video_store_path):
     category_index = label_map_util.create_category_index(categories)
 
     detection_time = 0
+    objects = dict()
     log.debug('Object detection with tensorflow')
     log.debug('Start reading and writing frames')
     try:
@@ -301,7 +268,7 @@ def object_detection2(self, video_path, video_store_path):
                 [boxes, scores, classes, num_detections],
                 feed_dict={frame_tensor: frame_expanded})
 
-            log.debug("Class: {} and score: {}".format(classes, scores))
+            #log.debug("Class: {} and score: {}".format(classes, scores))
             # Visualization of the results
             vis_util.visualize_boxes_and_labels_on_image_array(
                 frame_with_objects,
@@ -311,6 +278,16 @@ def object_detection2(self, video_path, video_store_path):
                 category_index,
                 use_normalized_coordinates=True,
                 line_thickness=8)
+
+            # Keep annotation results
+            if (len(scores[0]) > 0):
+                objects[cap.get(1)] = []
+            for i in range(len(scores[0])):
+                if(scores[0][i] > 0.49):
+                    tuple = (boxes[0][i].tolist(), classes[0][i], scores[0][i])
+                    objects[cap.get(1)].append(tuple)
+            # log.debug("Objects: {}".format(objects))
+            log.debug("Type of 1.0:".format(type(classes[0][1])))
 
             det_end = time.time()
             detection_time += det_end - det_start
@@ -330,9 +307,10 @@ def object_detection2(self, video_path, video_store_path):
         return
 
     log.debug("Finished TF detection")
+    log.debug(objects)
     out.release()
     cap.release()
-    return
+    return objects
 
 
 @shared_task(bind=True)
@@ -342,10 +320,11 @@ def transcribe(self, video_path):
     cmd = ['autosub',  video_path]
     stdout = exec_cmd(cmd)
     srt_path = video_path[:-4] + '.srt'
+    log.debug("Created SRT path: {}".format(srt_path))
 
-    #shutil.rmtree(frames_temp_path)
-    cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
-           '-c', 'copy', '-c:s', 'mov_text', video_path]
-    stdout = exec_cmd(cmd)
+    # shutil.rmtree(frames_temp_path)
+    # cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
+           #'-c', 'copy', '-c:s', 'mov_text', video_path]
+    # stdout = exec_cmd(cmd)
 
-    return
+    return srt_path
