@@ -147,9 +147,31 @@ def model(request):
 def annotate(request):
     jsondata = json.loads(request.body)
     context = process_form(request, jsondata)
-    with open(context['annotations_file'], 'r') as an:
-        return HttpResponse(an.read())
-    return JsonResponse(jsondata)
+
+    resp = dict()
+    fd = dict()
+    for k, v in context['positions'].iteritems():
+        for (x,y,w,h) in v:
+            fd[k] = { 'position': '({}, {})'.format(x, y),
+                      'dimensions': 'W = {}, H = {}'.format(w, h)
+                        }
+    resp['facedetection'] = fd
+
+    fc = dict()
+    for k, f in context['names'].iteritems():
+        fc[k] = f
+    resp['facerecognition'] = fc
+
+    od = dict()
+    od = context['objects']
+    resp['objectdetection'] = od
+
+    tr = dict()
+    tr['url'] = os.path.join(request.get_host(),
+                             settings.STATIC_URL, context['srt_file'])
+    resp['transcription'] = tr
+
+    return JsonResponse(resp)
 
 
 @Clock.time
