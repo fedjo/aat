@@ -287,7 +287,7 @@ def object_detection2(self, video_path, video_store_path):
                     tuple = (boxes[0][i].tolist(), classes[0][i], scores[0][i])
                     objects[cap.get(1)].append(tuple)
             # log.debug("Objects: {}".format(objects))
-            log.debug("Type of 1.0:".format(type(classes[0][1])))
+            log.debug("Type of 1.0:".format(type(classes[0][i])))
 
             det_end = time.time()
             detection_time += det_end - det_start
@@ -319,7 +319,7 @@ def transcribe(self, video_path):
 
     cmd = ['autosub',  video_path]
     stdout = exec_cmd(cmd)
-    srt_path = video_path[:-4] + '.srt'
+    srt_path = video_path.split('.')[0] + '.srt'
     log.debug("Created SRT path: {}".format(srt_path))
 
     # shutil.rmtree(frames_temp_path)

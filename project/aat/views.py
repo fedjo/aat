@@ -302,8 +302,7 @@ def process_form(request, jsondata):
             result_sbts = transcribe.delay(jsondata['content']['path'])
             srt_path = result_sbts.get(timeout=None)
             shutil.copy(srt_path, settings.STATIC_ROOT)
-            static_srt = os.path.join(settings.STATIC_ROOT,
-                                      os.path.basename(srt_path))
+            static_srt = os.path.basename(srt_path)
             os.remove(srt_path)
             log.debug("Served SRT file is located here: {}".format(static_srt))
     except Exception as e:
@@ -312,10 +311,12 @@ def process_form(request, jsondata):
 
     # TO TEST
     log.debug("The annotated video path is {}".format(video_store_path))
-    shutil.copy(video_store_path, settings.STATIC_ROOT)
-    video_serve_path = os.path.join(settings.STATIC_ROOT,
-                                    os.path.basename(video_store_path))
-    os.remove(video_store_path)
+    video_serve_path = ''
+    if (os.path.exists(video_store_path)):
+        shutil.copy(video_store_path, settings.STATIC_ROOT)
+        video_serve_path = os.path.join(settings.STATIC_ROOT,
+                                        os.path.basename(video_store_path))
+        os.remove(video_store_path)
     # Send all information back to UI
     context = {'form':  DefaultDetectionForm(),
                'media': os.path.basename(video_serve_path),
