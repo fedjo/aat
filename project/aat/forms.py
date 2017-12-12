@@ -41,14 +41,14 @@ class ComplexDetectionForm(forms.Form):
     transcription = forms.CharField(widget=forms.HiddenInput(),
                                     required=True, initial=False)
 
-    iszip = forms.ChoiceField(choices=CHOICES,
-                              widget=forms.RadioSelect(attrs={'data-toggle': 'radio'}))
+    #iszip = forms.ChoiceField(choices=CHOICES,
+    #                          widget=forms.RadioSelect(attrs={'data-toggle': 'radio'}))
 
-    scale = forms.FloatField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}))
-    neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    min_x_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    min_y_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    scale = forms.FloatField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '1.3'}))
+    neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '1.3'}))
+    min_x_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '10'}))
+    min_y_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '10'}))
 
-    bounding_boxes = forms.BooleanField(required=False)
+    bounding_boxes = forms.BooleanField(required=False, initial=True)
 
     # facesdb = forms.FileField(required=False, widget=forms.ClearableFileInput())
