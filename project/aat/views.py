@@ -150,10 +150,10 @@ def annotate(request):
 
     resp = dict()
     fd = dict()
-    for k, v in context['positions'].iteritems():
-        for (x,y,w,h) in v:
-            fd[k] = { 'position': '({}, {})'.format(x, y),
-                      'dimensions': 'W = {}, H = {}'.format(w, h)
+    for frameno, dim in context['positions'].iteritems():
+        for (x,y,w,h) in dim:
+            fd[frameno] = { 'position': { 'top': x, 'left': y  },
+                            'dimensions': { 'width': w, 'height': h}
                         }
     resp['facedetection'] = fd
 
