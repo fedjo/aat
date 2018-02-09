@@ -17,6 +17,7 @@ from django.http import HttpResponse, JsonResponse, \
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from .models import Configuration, Cascade, RecognizerPreTrainedData
 from .forms import ComplexDetectionForm, DefaultDetectionForm
@@ -30,16 +31,22 @@ log = logging.getLogger(__name__)
 
 
 def index(request):
+    return render(request, 'aat/index.html')
+
+
+@login_required
+def home(request):
     if request.method == 'GET':
         form = DefaultDetectionForm()
         context = {'boldmessage':  'Hello, this is the index page',
                    'form': form,
                    'media': ''}
-        return render(request, 'aat/index.html', context)
+        return render(request, 'aat/home.html', context)
 
 
 @csrf_exempt
 @require_http_methods(['GET'])
+@login_required
 def configure(request):
     """This method either returns the default configuration of the tool or
     returns and example configuration with possible values on every field"""
@@ -94,6 +101,7 @@ def configure(request):
 
 @csrf_exempt
 @require_http_methods(['POST', 'GET'])
+@login_required
 def model(request):
     """This method has also to create train YAML files  according to the
     faces uploaded for every recognizer Eighen, Fisher, LBPH """
@@ -144,6 +152,7 @@ def model(request):
 
 @csrf_exempt
 @require_http_methods(['POST'])
+@login_required
 def annotate(request):
     jsondata = json.loads(request.body)
     context = process_form(request, jsondata)
@@ -176,6 +185,7 @@ def annotate(request):
 
 @Clock.time
 @require_http_methods(['POST', 'GET'])
+@login_required
 def form_detection(request):
     if request.method == 'POST':
         log.debug(request.POST)

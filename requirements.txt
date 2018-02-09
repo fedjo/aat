@@ -9,3 +9,6 @@ pillow
 lxml
 jupyter
 matplotlib
+social-auth-app-django
+#requests
+requests>=2.5.1

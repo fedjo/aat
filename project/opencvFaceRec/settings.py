@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'revproxy',
+    'social_django',
     'aat'
 ]
 
@@ -75,6 +76,14 @@ TEMPLATES = [
         },
     },
 ]
+
+AUTHENTICATION_BACKENDS = {
+    'aat.auth0backend.Auth0',
+}
+LOGIN_URL = "/login/auth0"
+LOGIN_REDIRECT_URL = "/home"
+LOGOUT_REDIRECT_URL = "/"
+
 
 WSGI_APPLICATION = 'opencvFaceRec.wsgi.application'
 
@@ -172,6 +181,17 @@ CELERY_SETTINGS = {
     #'CELERYD_TASK_SOFT_TIME_LIMIT': 60 * 8,
     #'CELERY_ALWAYS_EAGER': True,
 }
+
+SOCIAL_AUTH_TRAILING_SLASH = False
+
+SOCIAL_AUTH_AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
+SOCIAL_AUTH_AUTH0_KEY = os.getenv('AUTH0_KEY')
+SOCIAL_AUTH_AUTH0_SECRET = os.getenv('AUTH0_SECRET')
+
+SOCIAL_AUTH_AUTH0_SCOPE = [
+    'openid',
+    'profile'
+]
 
 # Override configuration with files that extend this one in local_settings/
 

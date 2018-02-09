@@ -45,7 +45,7 @@ class ComplexDetectionForm(forms.Form):
     #                          widget=forms.RadioSelect(attrs={'data-toggle': 'radio'}))
 
     scale = forms.FloatField(widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': '1.3'}))
-    neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '1.3'}))
+    neighbors = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '5'}))
     min_x_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '10'}))
     min_y_dimension = forms.IntegerField(widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '10'}))
 

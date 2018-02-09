@@ -9,7 +9,7 @@ services:
     depends_on:
       - celery
   init:
-    image: producer/dev:cv3.3
+    image: producer/dev:cv3.3-xenial
     command: facerec-ctl init dev
     volumes:
       - ./db:/data/db:rw
@@ -17,18 +17,24 @@ services:
       - media:/data/media:rw
       - cache:/data/cache:rw
       - static:/facerec/project/static:rw
-      - /media/lebowski/Maxtor/thesis_video/:/thesis_video:rw
+        #- /media/lebowski/Maxtor4/thesis_video/:/thesis_video:rw
+      - /home/lebowski/Downloads/:/thesis_video:rw
+      - ./requirements.txt:/facerec/requirements.txt
   celery:
     extends: init
     command: facerec-ctl celery
     tty: true
   uwsgi:
     extends: init
+    environment:
+      - AUTH0_DOMAIN=
+      - AUTH0_KEY=
+      - AUTH0_SECRET=
     command: facerec-ctl uwsgi
     expose:
       - 8000
   nginx:
-    image: local_nginx
+    image: local_nginx:cv3.3-xenial
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static:/srv/www/:ro
