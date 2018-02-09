@@ -1,4 +1,4 @@
-FROM ubuntu:trusty
+FROM ubuntu:xenial
 
 # Install build essentials
 RUN set -x && \
@@ -21,7 +21,7 @@ RUN set -x && \
 RUN set -x && \
     apt-get install --no-install-recommends --fix-missing -yq  \
     libjpeg8-dev \
-    libtiff4-dev \
+    libtiff-dev \
     libjasper-dev \
     libpng12-dev
 
@@ -42,15 +42,20 @@ RUN set -x && \
 RUN set -x && \
     apt-get install --no-install-recommends --fix-missing -yq  \
     software-properties-common python-software-properties && \
-    add-apt-repository -y ppa:mc3man/trusty-media && \
+    #add-apt-repository -y ppa:mc3man/trusty-media && \
+    add-apt-repository -y ppa:mc3man/xerus-media && \
     apt-get update -q && \
     apt-get install --no-install-recommends --fix-missing -yq \
     ffmpeg \
     libgstreamer1.0-dev libgstreamer0.10-dev \
-    libgstreamer-plugins-bad0.10-dev gstreamer0.10-plugins-ugly \
-    libgstreamer-plugins-base0.10-dev gstreamer0.10-plugins-good \
-    libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-ugly \
-    libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev && \
+    #libgstreamer-plugins-bad0.10-dev \
+    libgstreamer-plugins-base0.10-dev \
+    libgstreamer-plugins-bad1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-good1.0-dev \
+    gstreamer0.10-plugins-good \
+    #gstreamer0.10-plugins-ugly \
+    gstreamer1.0-plugins-ugly &&\
     apt-get autoremove -yq && \
     apt-get clean -q && rm -rf /var/lib/apt/lists/*
 
