@@ -13,6 +13,7 @@ urlpatterns = [
         url(r'^configure/default', views.configure, name='configure_def'),
         url(r'^configure', views.configure, name='configure'),
         url(r'^model', views.model, name='model'),
+        url(r'^about', views.about, name='about'),
         url(r'^', include('django.contrib.auth.urls', namespace='auth')),
         url(r'^', include('social_django.urls', namespace='social')),
 ]

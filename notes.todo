@@ -6,37 +6,39 @@
         - [x] Second container build and install the django application
 
 - [X] Fix the HTTP API according to the document
+- [x] Fix video codes on OpenCV to read all kind of videos
+- [x] Create aggragated metadata from every annotation process in the form of shotlist
+- [x] Emebed Tensorflow for object detection instead of opencv_dnn module
+- [x] Add authentication system -> Integration with SSO
+- [x] Add docker volume to store data, and fix the whole set up
+- [x] Option for bounding boxes (true/false)
+- [x] Selective Search before object detection
+- [x] Add celery for asynchronous tasks
+    - [x] Create tasks for face detection/ face recognition/ object detection
+    - [x] Fix celery tasks time limits to handle long detection tasks [1]
 - [ ]  API calls [0]
     - [x] POST (upload) zip file with faces and create faces db and create pretained config
     - [x] GET list of all models uploaded
     - [x] GET default and example configuration
     - [x] POST to forms and annotate
     - [x] POST json to and annoatate
-        - [ ] Better error messages if provided json is invalid!
+        - [x] Better error messages if provided json is invalid!
     - [ ] Train cascade + List Cascades
-    - [ ] Send back annotation metadata in JSON
-- [x] Fix video codes on OpenCV to read all kind of videos
-- [x] Create aggragated metadata from every annotation process in the form of shotlist
-- [x] Emebed Tensorflow for object detection instead of opencv_dnn module
+- [ ] Process videos as bunch of frames in parallel
+    - [ ] Automatically select every how many frames will run the annotation process
+    - [ ] Give option to user to detect/recognize every X frames
+- [x] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
+    - [x] Fix API call to accept input and output language
+- [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
+- [ ] Send back annotation metadata in JSON
 - [ ] Create a two separate tasks Face detection/recognition + Object detection \
         \ that can run autonomous and in parallel. They should have a parameter
         \ to read X frames per second. They should also create aggregated results
         \ either to DB or to a another tasks which runs after the finish of the
         \ previous 2
-- [x] Add docker volume to store data, and fix the whole set up
-- [ ] Normalize face recognition results
 - [ ] Normalize face detection results
-- [x] Option for bounding boxes (true/false)
-- [x] Selective Search before object detection
-- [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
-- [x] Add celery for asynchronous tasks
-    - [x] Create tasks for face detection/ face recognition/ object detection
-    - [x] Fix celery tasks time limits to handle long detection tasks [1]
-- [ ] Give option to user to detect/recognize every X frames
-- [ ] Automatically select every how many frames will run the annotation process
-- [ ] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
-- [ ] Add authentication system -> Integration with SSO
-- [ ] Process videos as bunch of frames in parallel
+- [ ] Normalize face recognition results
+- [ ] Check whether the CNN for object detection can recognize animals
 
 
 

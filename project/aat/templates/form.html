@@ -74,12 +74,12 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="/aat/">Automatic Annotation Tool</a>
+              <a class="navbar-brand" href="/home">Automatic Annotation Tool</a>
             </div>
             <div class="navbar-collapse collapse">
               <ul class="nav navbar-nav navbar-right">
-                    <li><a href="/aat/">Home</a></li>
-                  <li><a href="#">About</a></li>
+                    <li><a href="/home">Home</a></li>
+                  <li><a href="/about">About</a></li>
                   <li><a href="#">View Annotated Videos</a></li>
                   </ul>
             </div>
@@ -92,7 +92,7 @@
                     {% block side_block %}
                     <div class="form-group">
                       <p>Detect your people</p>
-                      <form id="second-form" action="/aat/complexdetection/" enctype="multipart/form-data" method="post" >
+                      <form id="second-form" action="/complexdetection/" enctype="multipart/form-data" method="post" >
                         {% csrf_token %}
                         {% for hidden in form.hidden_fields %}
                             {{ hidden }}
