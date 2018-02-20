@@ -167,8 +167,29 @@ def annotate(request):
                 "content": { "type": "object",
                     "properties": {
                         "path" : { "type": "string" }
-                    }}
+                    }},
+                "bounding_boxes": { "type": "string" },
+                "recognizer": { "type": "object",
+                    "properties": {
+                        "name" : { "type": "string" }
+                    }},
+                "objdetector": { "type": "string" },
+                "transcription": { "type": "object",
+                    "properties": {
+                        "input_language": { "type": "string" },
+                        "output_language": { "type": "string" }
+                    }},
+                "cascade": { "type": "object",
+                    "properties": {
+                        "name": { "type": "array" },
+                        "scale": { "type": "string" },
+                        "neighbors": { "type": "string" },
+                        "minx": { "type": "string" },
+                        "miny": { "type": "string" }
+                        }}
             },
+            "required": ["content"],
+            "additionalProperties": False
         }
         validate(jsondata, schema)
     except ValueError as error:
