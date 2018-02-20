@@ -173,7 +173,10 @@ def annotate(request):
                     "properties": {
                         "name" : { "type": "string" }
                     }},
-                "objdetector": { "type": "string" },
+                "objdetector": { "type": "object",
+                    "properties" : {
+                        "framerate": { "type": "number" }
+                    }},
                 "transcription": { "type": "object",
                     "properties": {
                         "input_language": { "type": "string" },
@@ -182,6 +185,7 @@ def annotate(request):
                 "cascade": { "type": "object",
                     "properties": {
                         "name": { "type": "array" },
+                        "framerate": { "type": "number" },
                         "scale": { "type": "string" },
                         "neighbors": { "type": "string" },
                         "minx": { "type": "string" },
@@ -334,6 +338,10 @@ def process_form(request, jsondata):
         objects = dict()
         static_srt = ''
 
+        bounboxes = True
+        if ('bounding_boxes' in jsondata.keys()):
+            boundboxes = jsondata['bounding_boxes']
+
         if ('cascade' in jsondata.keys()):
 
             # Print values for face detection with Viola-Jones
@@ -341,6 +349,11 @@ def process_form(request, jsondata):
                       "min x dimension {}, min y dimension {}"
                       .format(jsondata['cascade']['scale'], jsondata['cascade']['neighbors'],
                               jsondata['cascade']['minx'], jsondata['cascade']['miny']))
+
+            # Decide the framerate skipping
+            framerate = 100
+            if 'framerate' in jsondata['cascade'].keys():
+                framerate = jsondata['cascade']['framerate']
 
             # Check whether we need recognition
             if 'recognizer' in jsondata.keys():
@@ -362,13 +375,18 @@ def process_form(request, jsondata):
                                                       jsondata['cascade']['neighbors'],
                                                       jsondata['cascade']['minx'],
                                                       jsondata['cascade']['miny'],
-                                                      has_bounding_boxes=jsondata['bounding_boxes'])
+                                                      boundboxes,
+                                                      framerate)
             (positions, names) = result.get(timeout=None)
             log.debug('Names found by recognition: {}'.format(names))
 
         if('objdetector' in jsondata.keys()):
+            framerate = 100
+            if 'framerate' in jsondata['objdetector'].keys():
+                framerate = jsondata['objdetector']['framerate']
+
             result2 = object_detection2.delay(jsondata['content']['path'],
-                                              video_store_path)
+                                              video_store_path, framerate)
             objects = result2.get(timeout=None)
             log.debug("Objects:")
             log.debug(objects)

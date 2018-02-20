@@ -32,7 +32,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                                recognizer_name, faces_path,
                                haarcascades, scale, neighbors,
                                minx, miny,
-                               has_bounding_boxes):
+                               has_bounding_boxes, framerate):
 
     log.debug('Trying to open video {}'.format(video_path))
     cap = cv2.VideoCapture(video_path)
@@ -75,6 +75,11 @@ def face_detection_recognition(self, video_path, video_store_path,
                 log.debug('Name2: {}'.format(faces_count))
                 break
 
+            # Skip frame
+            if (int(cap.get(1)) % framerate != 0):
+                continue
+
+            log.debug("Read frame: {}".format(int(cap.get(1))))
             # Decode the current frame
             ret, frame = cap.retrieve()
             # Get the current frame in grayscale
@@ -179,7 +184,7 @@ def face_detection_recognition(self, video_path, video_store_path,
 
 
 @shared_task(bind=True)
-def object_detection2(self, video_path, video_store_path):
+def object_detection2(self, video_path, video_store_path, framerate):
 
     log.debug('Trying to open video {}'.format(video_path))
     cap = cv2.VideoCapture(video_path)
@@ -228,8 +233,11 @@ def object_detection2(self, video_path, video_store_path):
                     f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
                 break
 
-            if (int(cap.get(1)) % 100 != 0):
+            # Skip frame
+            if (int(cap.get(1)) % framerate != 0):
                 continue
+
+            log.debug("Read frame: {}".format(int(cap.get(1))))
             # Decode the current frame
             ret, frame = cap.retrieve()
 
