@@ -2,6 +2,7 @@ import os
 import cv2
 import csv
 import json
+from jsonschema import validate
 import shutil
 import zipfile
 import logging
@@ -32,6 +33,10 @@ log = logging.getLogger(__name__)
 
 def index(request):
     return render(request, 'aat/index.html')
+
+
+def about(request):
+    return render(request, 'aat/about.html')
 
 
 @login_required
@@ -152,9 +157,25 @@ def model(request):
 
 @csrf_exempt
 @require_http_methods(['POST'])
-@login_required
+#@login_required
 def annotate(request):
-    jsondata = json.loads(request.body)
+    try:
+        jsondata = json.loads(request.body)
+        schema = {
+            "type": "object",
+            "properties": {
+                "content": { "type": "object",
+                    "properties": {
+                        "path" : { "type": "string" }
+                    }}
+            },
+        }
+        validate(jsondata, schema)
+    except ValueError as error:
+        return JsonResponse({'error': 'Bad JSON structure. ' + str(error)})
+    except Exception as e:
+        return JsonResponse({'error': 'Input JSON is not appropriate'})
+
     context = process_form(request, jsondata)
 
     resp = dict()
@@ -331,7 +352,13 @@ def process_form(request, jsondata):
             log.debug("Objects:")
             log.debug(objects)
         if ('transcription' in jsondata.keys()):
-            result_sbts = transcribe.delay(jsondata['content']['path'])
+            inlang = 'en'
+            outlang = 'en'
+            if ('input_language' in jsondata['transcription'].keys()):
+                inlang = jsondata['transcription']['input_language']
+            if ('output_language' in jsondata['transcription'].keys()):
+                outlang = jsondata['transcription']['output_language']
+            result_sbts = transcribe.delay(jsondata['content']['path'], inlang, outlang)
             srt_path = result_sbts.get(timeout=None)
             shutil.copy(srt_path, settings.STATIC_ROOT)
             static_srt = os.path.basename(srt_path)

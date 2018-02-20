@@ -228,7 +228,7 @@ def object_detection2(self, video_path, video_store_path):
                     f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
                 break
 
-            if (int(cap.get(1)) % 10 != 0):
+            if (int(cap.get(1)) % 100 != 0):
                 continue
             # Decode the current frame
             ret, frame = cap.retrieve()
@@ -268,7 +268,6 @@ def object_detection2(self, video_path, video_store_path):
                 [boxes, scores, classes, num_detections],
                 feed_dict={frame_tensor: frame_expanded})
 
-            #log.debug("Class: {} and score: {}".format(classes, scores))
             # Visualization of the results
             vis_util.visualize_boxes_and_labels_on_image_array(
                 frame_with_objects,
@@ -284,10 +283,9 @@ def object_detection2(self, video_path, video_store_path):
                 objects[cap.get(1)] = []
             for i in range(len(scores[0])):
                 if(scores[0][i] > 0.49):
-                    tuple = (boxes[0][i].tolist(), classes[0][i], scores[0][i])
+                    tuple = [ map(str, boxes[0][i].tolist()), int(classes[0][i]), str(scores[0][i]) ]
                     objects[cap.get(1)].append(tuple)
-            # log.debug("Objects: {}".format(objects))
-            log.debug("Type of 1.0:".format(type(classes[0][i])))
+
 
             det_end = time.time()
             detection_time += det_end - det_start
@@ -314,10 +312,10 @@ def object_detection2(self, video_path, video_store_path):
 
 
 @shared_task(bind=True)
-def transcribe(self, video_path):
+def transcribe(self, video_path, inlang, outlang):
     log.debug("Start transcribing video")
 
-    cmd = ['autosub',  video_path]
+    cmd = ['autosub', '-S', inlang, '-D', outlang, '-C 4', video_path]
     stdout = exec_cmd(cmd)
     srt_path = video_path.split('.')[0] + '.srt'
     log.debug("Created SRT path: {}".format(srt_path))
