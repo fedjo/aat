@@ -72,36 +72,6 @@
     },
     {
         "model": "aat.recognizerpretraineddata",
-        "pk": 2,
-        "fields": {
-            "name": "rec-EF.yml",
-            "recognizer": "EF",
-            "yml_file": "hrecognizer_train_data/rec-EF.yml"
-        }
-
-    },
-    {
-        "model": "aat.recognizerpretraineddata",
-        "pk": 3,
-        "fields": {
-            "name": "",
-            "recognizer": "FF",
-            "yml_file": "recognizer_train_data/rec-FF.yml"
-        }
-
-    },
-    {
-        "model": "aat.recognizerpretraineddata",
-        "pk": 4,
-        "fields": {
-            "name": "rec-LBPH.yml",
-            "recognizer": "LBPH",
-            "yml_file": "recognizer_train_data/rec-LBPH.yml"
-        }
-
-    },
-    {
-        "model": "aat.recognizerpretraineddata",
         "pk": 5,
         "fields": {
             "name": "rec-LBPH2.yml",

@@ -24,21 +24,23 @@
     - [x] POST json to and annoatate
         - [x] Better error messages if provided json is invalid!
     - [ ] Train cascade + List Cascades
-- [ ] Process videos as bunch of frames in parallel
-    - [ ] Automatically select every how many frames will run the annotation process
-    - [ ] Give option to user to detect/recognize every X frames
+        - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
+- [x] Automatically select every how many frames will run the annotation process
+    - [x] Give option to user to detect/recognize every X frames
 - [x] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
     - [x] Fix API call to accept input and output language
-- [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
 - [ ] Send back annotation metadata in JSON
+- [ ] Process videos as bunch of frames in parallel
 - [ ] Create a two separate tasks Face detection/recognition + Object detection \
         \ that can run autonomous and in parallel. They should have a parameter
-        \ to read X frames per second. They should also create aggregated results
+        \ to read every X frames. They should also create aggregated results
         \ either to DB or to a another tasks which runs after the finish of the
         \ previous 2
 - [ ] Normalize face detection results
 - [ ] Normalize face recognition results
-- [ ] Check whether the CNN for object detection can recognize animals
+- [x] Check whether the CNN for object detection can recognize animals
+        - Can recognize dog, cat, bird, horse, sheep, cow, elephant,
+            bear, zebra, giraffe
 
 
 

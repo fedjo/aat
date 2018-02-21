@@ -31,10 +31,9 @@ class Recognizer(object):
             size = ('', '')
         self.size = size
 
-    def train(self, faces_db, labels, dbname=''):
+    def train(self, faces_db, labels, people, dbname=''):
         pretrained_filepath = os.path.join(self.train_data_dir,
-                                           'rec-' + self.rec_name +
-                                           '-' + dbname +
+                                           dbname.replace('.zip', '') + '-' + self.rec_name +
                                            '-' + str(self.size[0]) + 'x' +
                                            str(self.size[1]) + '.yml')
         #if self.rec_name == 'LBPH':
@@ -53,13 +52,13 @@ class Recognizer(object):
             self.recognizer.train(faces_db, numpy.array(labels))
             self.recognizer.write(pretrained_filepath)
             # Save the YAML pretrained file to db
-            # TODO
-            # Save names of faces to the db
             prtrdata = RecognizerPreTrainedData()
             prtrdata.name = os.path.basename(pretrained_filepath)
             prtrdata.recognizer = self.rec_name
             with open(pretrained_filepath) as f:
                 prtrdata.yml_file.save(pretrained_filepath, File(f))
+            prtrdata.faces = ", ".join(people)
+
             prtrdata.save()
 
         except Exception as e:

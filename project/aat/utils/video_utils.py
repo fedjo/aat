@@ -23,7 +23,7 @@ def configure_recognizer(name, dbname, faces_path, size=(160, 120)):
                                                         cv_frontal_cascade,
                                                         size)
     myrecognizer = Recognizer(name, size)
-    myrecognizer.train(faces_db, labels, dbname)
+    myrecognizer.train(faces_db, labels, face_labelsDict.values(), dbname)
     return (myrecognizer, face_labelsDict)
 
 

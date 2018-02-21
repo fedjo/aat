@@ -82,7 +82,7 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
     log.debug("read_csv_file parameters")
     log.debug(face_labelsDict)
     log.debug("Len of faces_db: " + str(len(faces_db)))
-    log.debug("Labels: " + str(labels))
+    #log.debug("Labels: " + str(labels))
     return (face_labelsDict, faces_db, labels)
 
 

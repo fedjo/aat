@@ -106,7 +106,7 @@ def configure(request):
 
 @csrf_exempt
 @require_http_methods(['POST', 'GET'])
-@login_required
+#@login_required
 def model(request):
     """This method has also to create train YAML files  according to the
     faces uploaded for every recognizer Eighen, Fisher, LBPH """
@@ -142,9 +142,11 @@ def model(request):
         for r in ['LBPH', 'EF', 'FF']:
             configure_recognizer(r, uploadedzip.name, extractdir, size)
 
-        people = []
-        for facename in os.listdir(extractdir):
-            people.append(facename)
+        # Return faces that recognizer was trained with
+        ptrdataqs = RecognizerPreTrainedData.objects.all()
+        for o in ptrdataqs:
+            if uploadedzip.name.replace('.zip', '') in o.name:
+                people = (o.faces).split(', ')
 
         resp = dict()
         resp['people'] = people
@@ -204,6 +206,12 @@ def annotate(request):
     context = process_form(request, jsondata)
 
     resp = dict()
+
+    # If dict with error was returned
+    # send back error message
+    if 'error' in context.keys():
+        return JsonResponse(context)
+
     fd = dict()
     for frameno, dim in context['positions'].iteritems():
         for (x,y,w,h) in dim:
@@ -358,10 +366,17 @@ def process_form(request, jsondata):
             # Check whether we need recognition
             if 'recognizer' in jsondata.keys():
                 # Selected facedb for recognition
-                faces_path = os.path.join(settings.CACHE_ROOT, 'faces', 'lucce_thesisdb')
-                log.debug('Selected recognizer is {}'.format(jsondata['recognizer']['name']))
-                log.debug('The faces database has name {}'.format(faces_path))
-                recognizer_name = jsondata['recognizer']['name']
+                ptrdataqs = RecognizerPreTrainedData.objects.filter(name=jsondata['recognizer']['name'])
+                # Recognizer was not found in db
+                if ptrdataqs.count() == 0:
+                    return {'error': 'The specified recognizer *{}* '
+                            'was not found'.format(jsondata['recognizer']['name'])}
+
+                ptrdata = ptrdataqs.get()
+                log.debug('Selected recognizer is {}'.format(ptrdata.recognizer))
+                log.debug('The faces file has name {}'.format(ptrdata.name))
+                faces_path = ptrdata.yml_file.url
+                log.debug('The faces file has path {}'.format(ptrdata.yml_file.url))
             else:
                 faces_path = ''
                 recognizer_name = ''
