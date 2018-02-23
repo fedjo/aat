@@ -9,6 +9,8 @@ import logging
 import tempfile
 import subprocess
 from celery import shared_task
+import requests
+import json
 
 # Tensorflow imports
 import numpy as np
@@ -96,7 +98,6 @@ def face_detection_recognition(self, video_path, video_store_path,
                 current_faces.extend(cascade.detectMultiScale(gray, scaleFactor=float(scale),
                                                  minNeighbors=int(neighbors),
                                                  minSize=(int(minx), int(miny))))
-                allface_positions[cap.get(1)] = [ a.tolist() for a in current_faces ]
             det_end = time.time()
             detection_time += det_end - det_start
 
@@ -105,6 +106,9 @@ def face_detection_recognition(self, video_path, video_store_path,
             if (not has_bounding_boxes and not recognizer_name):
                 # Write frame to video file
                 try:
+                    allface_positions[cap.get(1)] = [ {'position': '({}, {})'.format(a[0], a[1]),
+                                                       'dimensions': 'W = {}, H = {}'.format(a[2], a[3])}
+                                                       for a in current_faces ]
                     out.write(cv2.resize(frame, (640, 480)))
                     recognition_time += 0
                     i += 1
@@ -119,8 +123,11 @@ def face_detection_recognition(self, video_path, video_store_path,
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
             frame_with_faces = frame.copy()
+            allface_positions[cap.get(1)] = []
             for (x, y, w, h) in current_faces:
                 facename_prob = 'person - NaN %'
+                value = {'position': '({}, {})'.format(x, y),
+                         'dimensions': 'W = {}, H = {}'.format(w, h)}
                 if recognizer_name:
                     # Predict possible faces on the original frame
                     (facename, prob) = myrecognizer.predictFaces(gray, (x, y, w, h),
@@ -133,6 +140,8 @@ def face_detection_recognition(self, video_path, video_store_path,
                             faces_count[facename] += 1
                         else:
                             faces_count[facename] = 1
+                        value['face'] = facename
+
                 if has_bounding_boxes:
                     # Draw rectangle around the face
                     cv2.rectangle(frame_with_faces,
@@ -150,6 +159,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                     cv2.putText(frame_with_faces, facename_prob, (x, y-2),
                                 cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
 
+                allface_positions[cap.get(1)].append(value)
             rec_end = time.time()
             recognition_time += rec_end - rec_start
 
@@ -169,17 +179,17 @@ def face_detection_recognition(self, video_path, video_store_path,
     # TODO
     # This piece of code has to be moved whitin the while loo
     log.debug("Writing file {}".format(txt_path))
-    #log.debug(allface_positions)
-    for k, v in allface_positions.iteritems():
-        for (x,y,w,h) in v:
-            with open(txt_path, 'a') as a:
-                a.write("Frame {}:\n".format(k))
-                a.write("Face in position: ({}, {})\n".format(x, y))
-                a.write("Dimensions: w = {}, h = {}\n".format(w, h))
-    for k, f in faces_count.iteritems():
-        with open(txt_path, 'a') as a:
-            a.write("Face {} found {} times:\n".format(k, f))
+    log.debug(allface_positions)
+    #for k, v in allface_positions.iteritems():
+    #    with open(txt_path, 'a') as a:
+    #        a.write("Frame {}:\n".format(k))
+    #        a.write("Face in position: {}\n".format(v[0]['position']))
+    #        a.write("Dimensions: {}\n".format(v[0]['dimensions']))
+    #for k, f in faces_count.iteritems():
+    #    with open(txt_path, 'a') as a:
+    #        a.write("Face {} found {} times:\n".format(k, f))
 
+    return {'facedetection': allface_positions }
     return allface_positions, faces_count
 
 
@@ -199,7 +209,7 @@ def object_detection2(self, video_path, video_store_path, framerate):
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
         raise Exception('Cannot open video')
-        return
+        return {}
 
     CWD_PATH = os.path.join(os.getenv('FACEREC_APP_DIR', '..'), 'aat')
 
@@ -310,13 +320,13 @@ def object_detection2(self, video_path, video_store_path, framerate):
         log.error(str(e))
         out.release()
         cap.release()
-        return
+        return {}
 
     log.debug("Finished TF detection")
     log.debug(objects)
     out.release()
     cap.release()
-    return objects
+    return {'objectdetection': objects}
 
 
 @shared_task(bind=True)
@@ -333,4 +343,20 @@ def transcribe(self, video_path, inlang, outlang):
            #'-c', 'copy', '-c:s', 'mov_text', video_path]
     # stdout = exec_cmd(cmd)
 
-    return srt_path
+    return {'transcription': srt_path}
+
+
+@shared_task(bind=True)
+def senddata(self, annotations_list):
+
+    json = dict()
+    [json.update(i) for i in annotations_list]
+    log.debug("Sending data to external API")
+    requests.post(settings.EXT_SERVICE, json=json)
+
+
+@shared_task(bind=True)
+def returnvalues(self, annotations_list):
+    log.debug("Returning values to UI")
+    return annotations_list
+

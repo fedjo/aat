@@ -8,7 +8,7 @@ import zipfile
 import logging
 import tempfile
 from random import randint
-from celery import chain
+from celery import chord
 
 
 from django.core.files.storage import FileSystemStorage
@@ -25,7 +25,8 @@ from .forms import ComplexDetectionForm, DefaultDetectionForm
 from utils.clock_utils import Clock
 from utils.video_utils import configure_recognizer, create_annotated_video_path
 from utils.general_utils import create_name_dict_from_file, create_csv_file
-from aat.tasks import face_detection_recognition, transcribe, object_detection2
+from aat.tasks import face_detection_recognition, transcribe, \
+        object_detection2, senddata
 
 
 log = logging.getLogger(__name__)
@@ -203,38 +204,12 @@ def annotate(request):
     except Exception as e:
         return JsonResponse({'error': 'Input JSON is not appropriate'})
 
-    context = process_form(request, jsondata)
+    callback = senddata.s()
+    context = process_form(request, jsondata, callback)
+    return JsonResponse(context)
 
-    resp = dict()
-
-    # If dict with error was returned
-    # send back error message
-    if 'error' in context.keys():
-        return JsonResponse(context)
-
-    fd = dict()
-    for frameno, dim in context['positions'].iteritems():
-        for (x,y,w,h) in dim:
-            fd[frameno] = { 'position': { 'top': x, 'left': y  },
-                            'dimensions': { 'width': w, 'height': h}
-                        }
-    resp['facedetection'] = fd
-
-    fc = dict()
-    for k, f in context['names'].iteritems():
-        fc[k] = f
-    resp['facerecognition'] = fc
-
-    od = dict()
-    od = context['objects']
-    resp['objectdetection'] = od
-
-    tr = dict()
-    tr['url'] = os.path.join(request.get_host(),
-                             settings.STATIC_URL, context['srt_file'])
-    resp['transcription'] = tr
-
-    return JsonResponse(resp)
+    #tr['url'] = os.path.join(request.get_host(),
+    #                         settings.STATIC_URL, context['srt_file'])
 
 
 @Clock.time
@@ -318,9 +293,12 @@ def form_detection(request):
 
             log.debug('The json created is: ')
             log.debug(jsondata)
-            context = process_form(request, jsondata)
-            if not context:
-                return HttpResponseBadRequest("Could not process video")
+
+            # Callback task
+            callback = returnvalues.s()
+            context = process_form(request, jsondata, callback)
+            if 'error' in context.keys():
+                return HttpResponseBadRequest("Error: {}".format(context['error']))
             return render(request, 'aat/index.html', context)
         else:
             log.debug(form.errors.as_data())
@@ -333,13 +311,16 @@ def form_detection(request):
         return render(request, 'aat/block.html', {'form': vidform})
 
 
-def process_form(request, jsondata):
+def process_form(request, jsondata, callback_task):
 
     # Create video and annotations file
     log.debug('Video path is {}'.format(jsondata['content']['path']))
     video_store_path = create_annotated_video_path(jsondata)
     annot_text_file = os.path.join(settings.CACHE_ROOT,
                             os.path.basename(video_store_path).split('.')[0]+'.txt')
+
+    # List of all the annotation to tasks to be excecuted
+    header = []
     try:
         names = dict()
         positions = dict()
@@ -381,7 +362,18 @@ def process_form(request, jsondata):
                 faces_path = ''
                 recognizer_name = ''
 
-            result = face_detection_recognition.delay(jsondata['content']['path'],
+            #result = face_detection_recognition.delay(jsondata['content']['path'],
+            #                                          video_store_path,
+            #                                          recognizer_name,
+            #                                          faces_path,
+            #                                          jsondata['cascade']['name'],
+            #                                          jsondata['cascade']['scale'],
+            #                                          jsondata['cascade']['neighbors'],
+            #                                          jsondata['cascade']['minx'],
+            #                                          jsondata['cascade']['miny'],
+            #                                          boundboxes,
+            #                                          framerate)
+            face_task = face_detection_recognition.s(jsondata['content']['path'],
                                                       video_store_path,
                                                       recognizer_name,
                                                       faces_path,
@@ -392,19 +384,24 @@ def process_form(request, jsondata):
                                                       jsondata['cascade']['miny'],
                                                       boundboxes,
                                                       framerate)
-            (positions, names) = result.get(timeout=None)
-            log.debug('Names found by recognition: {}'.format(names))
+            header.append(face_task)
+            # (positions, names) = result.get(timeout=None)
+            #log.debug('Names found by recognition: {}'.format(names))
 
         if('objdetector' in jsondata.keys()):
             framerate = 100
             if 'framerate' in jsondata['objdetector'].keys():
                 framerate = jsondata['objdetector']['framerate']
 
-            result2 = object_detection2.delay(jsondata['content']['path'],
+            #result2 = object_detection2.delay(jsondata['content']['path'],
+            #                                  video_store_path, framerate)
+            object_task = object_detection2.s(jsondata['content']['path'],
                                               video_store_path, framerate)
-            objects = result2.get(timeout=None)
-            log.debug("Objects:")
-            log.debug(objects)
+            header.append(object_task)
+            # objects = result2.get(timeout=None)
+            #log.debug("Objects:")
+            #log.debug(objects)
+
         if ('transcription' in jsondata.keys()):
             inlang = 'en'
             outlang = 'en'
@@ -412,32 +409,41 @@ def process_form(request, jsondata):
                 inlang = jsondata['transcription']['input_language']
             if ('output_language' in jsondata['transcription'].keys()):
                 outlang = jsondata['transcription']['output_language']
-            result_sbts = transcribe.delay(jsondata['content']['path'], inlang, outlang)
-            srt_path = result_sbts.get(timeout=None)
-            shutil.copy(srt_path, settings.STATIC_ROOT)
-            static_srt = os.path.basename(srt_path)
-            os.remove(srt_path)
-            log.debug("Served SRT file is located here: {}".format(static_srt))
+            # result_sbts = transcribe.delay(jsondata['content']['path'], inlang, outlang)
+            subtitle_task = transcribe.s(jsondata['content']['path'], inlang, outlang)
+            header.append(subtitle_task)
+            #srt_path = result_sbts.get(timeout=None)
+            #shutil.copy(srt_path, settings.STATIC_ROOT)
+            #static_srt = os.path.basename(srt_path)
+            #os.remove(srt_path)
+            #log.debug("Served SRT file is located here: {}".format(static_srt))
     except Exception as e:
         log.debug(str(e))
-        return {}
+        context = {'error': str(e)}
 
-    # TO TEST
-    log.debug("The annotated video path is {}".format(video_store_path))
-    video_serve_path = ''
-    if (os.path.exists(video_store_path)):
-        shutil.copy(video_store_path, settings.STATIC_ROOT)
-        video_serve_path = os.path.join(settings.STATIC_ROOT,
-                                        os.path.basename(video_store_path))
-        os.remove(video_store_path)
-    # Send all information back to UI
-    context = {'form':  DefaultDetectionForm(),
-               'media': os.path.basename(video_serve_path),
-               'annotations_file': annot_text_file,
-               'names': names,
-               'positions': positions,
-               'objects': objects,
-               'srt_file': static_srt}
+    if 'senddata' in callback_task.name:
+        chord(header)(callback_task)
+        return {'message': 'Successfully submitted annotations tasks'}
+    else:
+        result = chord(header)(callback_task).get()
+
+        # TO TEST
+        log.debug("The annotated video path is {}".format(video_store_path))
+        video_serve_path = ''
+        if (os.path.exists(video_store_path)):
+            shutil.copy(video_store_path, settings.STATIC_ROOT)
+            video_serve_path = os.path.join(settings.STATIC_ROOT,
+                                            os.path.basename(video_store_path))
+            os.remove(video_store_path)
+        # Send all information back to UI
+        context = {'form':  DefaultDetectionForm(),
+                   'media': os.path.basename(video_serve_path),
+                   'annotations_file': annot_text_file,
+                   'names': result['facedetection'],
+                   'positions': result['facedetection']['positions'],
+                   'objects': result['objectdetection'],
+                   'srt_file': result['transcription']}
+
     return context
 
 

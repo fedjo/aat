@@ -29,17 +29,15 @@
     - [x] Give option to user to detect/recognize every X frames
 - [x] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
     - [x] Fix API call to accept input and output language
-- [ ] Send back annotation metadata in JSON
+- [x] Send back annotation metadata in JSON to MCSSR
+- [x] Create aggregated results either to DB or to another ext service after the finish of tasks
+- [x] Create a two separate tasks Face detection/recognition + Object detection \
+        \ that can run autonomous and in parallel. They should have a parameter to read every X frames
 - [ ] Process videos as bunch of frames in parallel
-- [ ] Create a two separate tasks Face detection/recognition + Object detection \
-        \ that can run autonomous and in parallel. They should have a parameter
-        \ to read every X frames. They should also create aggregated results
-        \ either to DB or to a another tasks which runs after the finish of the
-        \ previous 2
 - [ ] Normalize face detection results
 - [ ] Normalize face recognition results
 - [x] Check whether the CNN for object detection can recognize animals
-        - Can recognize dog, cat, bird, horse, sheep, cow, elephant,
+        -> Can recognize dog, cat, bird, horse, sheep, cow, elephant,
             bear, zebra, giraffe
 
 

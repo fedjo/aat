@@ -193,6 +193,9 @@ SOCIAL_AUTH_AUTH0_SCOPE = [
     'profile'
 ]
 
+# Service where Automatic Annotation Tools sends the generated data
+EXT_SERVICE = 'http://82.212.102.18:8001'
+
 # Override configuration with files that extend this one in local_settings/
 
 def get_conf_files():
