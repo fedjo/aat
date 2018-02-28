@@ -62,7 +62,6 @@ def face_detection_recognition(self, video_path, video_store_path,
     recognition_time = 0
 
     log.debug('Start reading and writing frames')
-    faces_count = dict()
     allface_positions = dict()
     try:
         while(cap.isOpened()):
@@ -74,7 +73,6 @@ def face_detection_recognition(self, video_path, video_store_path,
                     f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
                     f.write('---Recognition time---\n')
                     f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
-                log.debug('Name2: {}'.format(faces_count))
                 break
 
             # Skip frame
@@ -136,10 +134,6 @@ def face_detection_recognition(self, video_path, video_store_path,
                     if not facename:
                         facename_prob = 'person - NaN %'
                     else:
-                        if facename in faces_count:
-                            faces_count[facename] += 1
-                        else:
-                            faces_count[facename] = 1
                         value['face'] = facename
 
                 if has_bounding_boxes:
@@ -179,7 +173,6 @@ def face_detection_recognition(self, video_path, video_store_path,
     # TODO
     # This piece of code has to be moved whitin the while loo
     log.debug("Writing file {}".format(txt_path))
-    log.debug(allface_positions)
     #for k, v in allface_positions.iteritems():
     #    with open(txt_path, 'a') as a:
     #        a.write("Frame {}:\n".format(k))
@@ -190,7 +183,6 @@ def face_detection_recognition(self, video_path, video_store_path,
     #        a.write("Face {} found {} times:\n".format(k, f))
 
     return {'facedetection': allface_positions }
-    return allface_positions, faces_count
 
 
 @shared_task(bind=True)
@@ -250,6 +242,9 @@ def object_detection2(self, video_path, video_store_path, framerate):
             log.debug("Read frame: {}".format(int(cap.get(1))))
             # Decode the current frame
             ret, frame = cap.retrieve()
+            # Frame height, width
+            height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 
             # optional implementation to use all/selected haar cascades
             det_start = time.time()
@@ -301,9 +296,17 @@ def object_detection2(self, video_path, video_store_path, framerate):
                 objects[cap.get(1)] = []
             for i in range(len(scores[0])):
                 if(scores[0][i] > 0.49):
-                    tuple = [ map(str, boxes[0][i].tolist()), int(classes[0][i]), str(scores[0][i]) ]
-                    objects[cap.get(1)].append(tuple)
-
+                    data = dict()
+                    xmin = boxes[0][i].item(1) * width
+                    ymin = boxes[0][i].item(0) * height
+                    rec_width = boxes[0][i].item(3) * width - xmin
+                    rec_height = boxes[0][i].item(2) * height - ymin
+                    data['position'] = '({}, {})'.format(xmin, ymin)
+                    data['dimensions'] = 'W = {}, H = {}'.format(rec_width,
+                                                                 rec_height)
+                    data['class'] = category_index[int(classes[0][i])]['name']
+                    data['probability'] = str(scores[0][i])
+                    objects[cap.get(1)].append(data)
 
             det_end = time.time()
             detection_time += det_end - det_start
@@ -323,7 +326,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
         return {}
 
     log.debug("Finished TF detection")
-    log.debug(objects)
     out.release()
     cap.release()
     return {'objectdetection': objects}
@@ -347,10 +349,13 @@ def transcribe(self, video_path, inlang, outlang):
 
 
 @shared_task(bind=True)
-def senddata(self, annotations_list):
+def senddata(self, annotations):
 
     json = dict()
-    [json.update(i) for i in annotations_list]
+    if(isinstance(annotations, list)):
+        [json.update(i) for i in annotations]
+    else:
+        json = annotations
     log.debug("Sending data to external API")
     requests.post(settings.EXT_SERVICE, json=json)
 
@@ -359,4 +364,3 @@ def senddata(self, annotations_list):
 def returnvalues(self, annotations_list):
     log.debug("Returning values to UI")
     return annotations_list
-
