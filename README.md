@@ -17,7 +17,7 @@
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `{ people : [ Obama, Trump  ] }`
+    **Content:** `{ "people" : [ "Obama", "Trump"  ] }`
 
 * **Sample Call:**
 
@@ -49,7 +49,7 @@
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `[ actors.yml, students.yml  ]`
+    **Content:** `[ "actors.yml", "students.yml""  ]`
 
 * **Sample Call:**
 
@@ -74,34 +74,97 @@
 
 * **Method:**
 
-  `POS`
+  `POST`
 
 * **Data Params**
 
-  {}
+  `{
+    "content": {"path": "/thesis_video/I148276[HD-VI].mp4"},
+    "cascade": { "name": [1], "scale": "1.3", "neighbors": "5", "minx" : "25", "miny":"25", "framerate": 1  },
+    "bounding_boxes": "True",
+    "objdetector": {"framerate": 50},
+    "transcription": {"input_language": "it", "output_language": "en"}
+    }`
 
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `{}`
+  **Content:** `{
+        "transcription": {
+            "url: /static/I148276[HD-VI].srt"
+        },
+        "facedetection": {
+                   "457.0": [
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                            "face": "Obama"
+                            "probability": 0.56
+                       },
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                            "face": "Obama"
+                            "probability": 0.56
+                       }
+                   ],
+                   "601.0": [
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                       },
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                       }
+                   ],
+               },
+        "objectdetection": {
+                   "457.0": [
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                            "class": "person"
+                            "probability": 0.56
+                       },
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                            "class": "dog"
+                            "probability": 0.56
+                       }
+                   ],
+                   ""601.0"": [
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                       },
+                       {
+                            "position": { "xaxis": 982, "yaxis": 181 },
+                            "dimensions": { "width": 398, "height": 398 },
+                       }
+                   ],
+                 }
+  }`
 
 * **Error Response:**
 
-  * **Code:** 404 NOT FOUND <br />
-    **Content:** `{ error : "User doesn't exist" }`
+  * **Code:** 400 BAD REQUEST <br />
+    **Content:** `{ error : "Bad JSON structure" }`
 
   OR
 
-  * **Code:** 401 UNAUTHORIZED <br />
-    **Content:** `{ error : "You are unauthorized to make this request." }`
+  * **Code:** 400 BAD REQUEST <br />
+    **Content:** `{ error : "Input JSON is not appropriate" }`
 
 * **Sample Call:**
 
   ```javascript
     $.ajax({
-      url: "/model",
+      url: "/annotate",
       dataType: "json",
-      type : "GET",
+      type : "POST",
+      data: jsondata
       success : function(r) {
         console.log(r);
       }
