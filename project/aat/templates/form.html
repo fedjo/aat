@@ -20,7 +20,7 @@
     <link href="{% static 'Flat-UI/docs/assets/css/demo.css' %}" rel="stylesheet">
     <!-- <link href="{% static 'Flat-UI/dist/css/file-input.css' %}" rel="stylesheet"> -->
 
-    <link rel="shortcut icon" href="img/favicon.ico">
+    <link rel="shortcut icon" href="{% static 'images/AAT-logo.png' %}">
     <script type="text/javascript" charset="utf-8" src="{% static 'Flat-UI/dist/js/vendor/jquery.min.js' %}"></script>
     <script type="text/javascript" charset="utf-8" src="{% static 'Flat-UI/dist/js/vendor/video.js' %}"></script>
     <script type="text/javascript" charset="utf-8" src="{% static 'Flat-UI/dist/js/flat-ui.min.js' %}"></script>
@@ -74,13 +74,14 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="/home">Automatic Annotation Tool</a>
+          <a class="navbar-brand" href="/home"><img src="{% static 'images/AAT-logo.png' %}"
+              alt="" width="38" height="38">Automatic Annotation Tool</a>
             </div>
             <div class="navbar-collapse collapse">
               <ul class="nav navbar-nav navbar-right">
                     <li><a href="/home">Home</a></li>
                   <li><a href="/about">About</a></li>
-                  <li><a href="#">View Annotated Videos</a></li>
+                  <!--  <li><a href="#">View Annotated Videos</a></li> -->
                   </ul>
             </div>
           </div>
