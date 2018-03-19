@@ -23,8 +23,8 @@ from django.contrib.auth.decorators import login_required
 from .models import Configuration, Cascade, RecognizerPreTrainedData
 from .forms import ComplexDetectionForm, DefaultDetectionForm
 from utils.clock_utils import Clock
-from utils.video_utils import configure_recognizer, create_annotated_video_path
-from utils.general_utils import create_name_dict_from_file, create_csv_file
+from utils.utils import create_annotated_video_path
+from utils.recognizer_utils import train
 from aat.tasks import face_detection_recognition, transcribe, \
         object_detection2, senddata
 
@@ -52,7 +52,7 @@ def home(request):
 
 @csrf_exempt
 @require_http_methods(['GET'])
-@login_required
+#@login_required
 def configure(request):
     """This method either returns the default configuration of the tool or
     returns and example configuration with possible values on every field"""
@@ -113,9 +113,9 @@ def model(request):
     faces uploaded for every recognizer Eighen, Fisher, LBPH """
 
     if (request.method == 'POST' and
-        request.FILES['file']):
+        request.FILES['model']):
 
-        uploadedzip = request.FILES['file']
+        uploadedzip = request.FILES['model']
         fs = FileSystemStorage()
         zipname = fs.save(uploadedzip.name, uploadedzip)
         zippath = os.path.join(settings.MEDIA_ROOT, zipname)
@@ -140,8 +140,12 @@ def model(request):
             size[0] = request.POST['sizex']
             size[1] = request.POST['sizey']
 
-        for r in ['LBPH', 'EF', 'FF']:
-            configure_recognizer(r, uploadedzip.name, extractdir, size)
+        for type in ['LBPH', 'EF', 'FF']:
+            try:
+                train(type, uploadedzip.name, extractdir, size)
+            except Exception as e:
+                log.error(str(e))
+                return JsonResponse({'error': 'Cannot train recognizer'})
 
         # Return faces that recognizer was trained with
         ptrdataqs = RecognizerPreTrainedData.objects.all()
@@ -322,6 +326,18 @@ def process_form(request, jsondata, callback_task):
     # List of all the annotation to tasks to be excecuted
     header = []
     try:
+
+        if ('http' in jsondata['content']['path']):
+            import urllib2
+            url = jsondata['content']['path']
+            videopath = os.path.join(settings.MEDIA_ROOT, url[url.rfind("/")+1:])
+            contents = urllib2.urlopen(url).read()
+            with open(videopath, 'a+') as v:
+                v.write(contents)
+        else:
+            videopath = jsondata['content']['path']
+
+
         names = dict()
         positions = dict()
         objects = dict()
@@ -333,16 +349,40 @@ def process_form(request, jsondata, callback_task):
 
         if ('cascade' in jsondata.keys()):
 
-            # Print values for face detection with Viola-Jones
-            log.debug("The values provided are: scale {}, neighbors {},"
-                      "min x dimension {}, min y dimension {}"
-                      .format(jsondata['cascade']['scale'], jsondata['cascade']['neighbors'],
-                              jsondata['cascade']['minx'], jsondata['cascade']['miny']))
-
             # Decide the framerate skipping
             framerate = 100
             if 'framerate' in jsondata['cascade'].keys():
                 framerate = jsondata['cascade']['framerate']
+
+            # Decide the name skipping
+            name = [1]
+            if 'name' in jsondata['cascade'].keys():
+                name = jsondata['cascade']['name']
+
+            # Decide the scale skipping
+            scale = 1.3
+            if 'scale' in jsondata['cascade'].keys():
+                scale = jsondata['cascade']['scale']
+
+            # Decide the neighbors skipping
+            neighbors = 5
+            if 'neighbors' in jsondata['cascade'].keys():
+                neighbors= jsondata['cascade']['neighbors']
+
+            # Decide the minx skipping
+            minx = 30
+            if 'minx' in jsondata['cascade'].keys():
+                minx = jsondata['cascade']['minx']
+
+            # Decide the miny skipping
+            miny = 30
+            if 'miny' in jsondata['cascade'].keys():
+                miny = jsondata['cascade']['miny']
+
+            # Print values for face detection with Viola-Jones
+            log.debug("The values provided are: scale {}, neighbors {},"
+                      "min x dimension {}, min y dimension {}"
+                      .format(scale, neighbors, minx, miny))
 
             # Check whether we need recognition
             if 'recognizer' in jsondata.keys():
@@ -356,34 +396,18 @@ def process_form(request, jsondata, callback_task):
                 ptrdata = ptrdataqs.get()
                 log.debug('Selected recognizer is {}'.format(ptrdata.recognizer))
                 log.debug('The faces file has name {}'.format(ptrdata.name))
-                faces_path = ptrdata.yml_file.url
+
+                recid = ptrdata.name
+
                 log.debug('The faces file has path {}'.format(ptrdata.yml_file.url))
             else:
-                faces_path = ''
-                recognizer_name = ''
+                recid = ''
 
-            #result = face_detection_recognition.delay(jsondata['content']['path'],
-            #                                          video_store_path,
-            #                                          recognizer_name,
-            #                                          faces_path,
-            #                                          jsondata['cascade']['name'],
-            #                                          jsondata['cascade']['scale'],
-            #                                          jsondata['cascade']['neighbors'],
-            #                                          jsondata['cascade']['minx'],
-            #                                          jsondata['cascade']['miny'],
-            #                                          boundboxes,
-            #                                          framerate)
             face_task = face_detection_recognition.s(jsondata['content']['path'],
                                                       video_store_path,
-                                                      recognizer_name,
-                                                      faces_path,
-                                                      jsondata['cascade']['name'],
-                                                      jsondata['cascade']['scale'],
-                                                      jsondata['cascade']['neighbors'],
-                                                      jsondata['cascade']['minx'],
-                                                      jsondata['cascade']['miny'],
-                                                      boundboxes,
-                                                      framerate)
+                                                      recid, name, scale,
+                                                      neighbors, minx, miny,
+                                                      boundboxes, framerate)
             header.append(face_task)
             # (positions, names) = result.get(timeout=None)
             #log.debug('Names found by recognition: {}'.format(names))

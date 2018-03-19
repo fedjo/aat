@@ -6,6 +6,9 @@ import subprocess
 from subprocess import PIPE
 
 from django.conf import settings
+from django.core.files.uploadedfile import TemporaryUploadedFile
+
+from aat.models import Cascade, RecognizerPreTrainedData
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +61,8 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
     face_labelsDict = dict()
     # List containing images (as numpy arrays) of faces
     # to train the recognizer
-    faces_db = []
-    # List containing jsut the label numbers
+    npfaces = []
+    # List containing just the label numbers
     labels = []
     with open(csv_path, 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
@@ -74,18 +77,50 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
                 (x, y, w, h) = main_faces[0]
                 labels.append(int(row[1]))
                 if recogn_name == 'LBPH':
-                    faces_db.append(gray[y:y+h, x:x+w])
+                    npfaces.append(gray[y:y+h, x:x+w])
                     # labels.append(int(row[1]))
-                    # faces_db.append(cv2.resize(gray[y:y+h, x:x+w], size))
+                    # npfaces.append(cv2.resize(gray[y:y+h, x:x+w], size))
                 else:
-                    faces_db.append(cv2.resize(gray[y:y+h, x:x+w], size))
+                    npfaces.append(cv2.resize(gray[y:y+h, x:x+w], size))
     log.debug("read_csv_file parameters")
     log.debug(face_labelsDict)
-    log.debug("Len of faces_db: " + str(len(faces_db)))
+    log.debug("Len of npfaces: " + str(len(npfaces)))
     #log.debug("Labels: " + str(labels))
-    return (face_labelsDict, faces_db, labels)
+    return (face_labelsDict, npfaces, labels)
 
 
+# Function to return the full path where the
+# annotated video will be saved
+def create_annotated_video_path(jsondata):
+
+    filename = jsondata['content']['path']
+    if isinstance(filename, TemporaryUploadedFile):
+        filepath = filename.temporary_file_path()
+    else:
+        filepath = filename
+
+    filename = os.path.basename(filepath).split('.')[0]
+
+    newfilename = filename
+    if ('cascade' in jsondata.keys()):
+        newfilename += '-'
+        newfilename += 'facedet'
+        if 'recognizer' in jsondata.keys():
+            newfilename += '-'
+            newfilename += jsondata['recognizer']['name']
+    if('objdetector' in jsondata.keys()):
+        newfilename += '-'
+        newfilename += 'objdet'
+    if ('transcription' in jsondata.keys()):
+        newfilename += '-'
+        newfilename += 'transcibe'
+
+    newfilename += '.mp4'
+    log.debug("This is the annotated video name: {}".format(newfilename))
+    return os.path.join(settings.CACHE_ROOT, newfilename)
+
+
+# ###
 def create_name_dict_from_file():
     d = {}
     faces_filepath = os.path.join('/tmp', 'faces_in_current_video.txt')

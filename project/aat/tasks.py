@@ -22,8 +22,8 @@ from object_detection.utils import visualization_utils as vis_util
 from django.conf import settings
 
 from .models import Cascade
-from .utils.video_utils import configure_recognizer
-from .utils.general_utils import exec_cmd
+from .utils.utils import exec_cmd
+import aat.utils.recognizer_utils as recognizer
 
 
 log = logging.getLogger(__name__)
@@ -31,10 +31,8 @@ log = logging.getLogger(__name__)
 
 @shared_task(bind=True)
 def face_detection_recognition(self, video_path, video_store_path,
-                               recognizer_name, faces_path,
-                               haarcascades, scale, neighbors,
-                               minx, miny,
-                               has_bounding_boxes, framerate):
+                               recid, haarcascades, scale, neighbors,
+                               minx, miny, has_bounding_boxes, framerate):
 
     log.debug('Trying to open video {}'.format(video_path))
     cap = cv2.VideoCapture(video_path)
@@ -54,15 +52,14 @@ def face_detection_recognition(self, video_path, video_store_path,
     txt_path = os.path.join(settings.CACHE_ROOT,
                             os.path.basename(video_store_path).split('.')[0]+'.txt')
 
-    if recognizer_name:
-        (myrecognizer, face_labelsDict) = \
-                configure_recognizer(recognizer_name, 'SD_FACES', faces_path)
+    if recid:
+        (myrecognizer, face_labelsDict) = recognizer.load(recid)
 
     detection_time = 0
     recognition_time = 0
 
     log.debug('Start reading and writing frames')
-    allface_positions = dict()
+    allface_positions = []
     try:
         while(cap.isOpened()):
             ret_grab = cap.grab()
@@ -101,12 +98,13 @@ def face_detection_recognition(self, video_path, video_store_path,
 
             # __throw_overlapping(profiles)
 
-            if (not has_bounding_boxes and not recognizer_name):
+            if (not has_bounding_boxes and not recid):
                 # Write frame to video file
                 try:
-                    allface_positions[cap.get(1)] = [ {'position': '({}, {})'.format(a[0], a[1]),
-                                                       'dimensions': 'W = {}, H = {}'.format(a[2], a[3])}
-                                                       for a in current_faces ]
+                    allface_positions += [ { 'position': {'xaxis': a[0], 'yaxis': a[1]},
+                                             'dimensions': {'width': a[2], 'height': a[3]},
+                                             'frame': cap.get(1),
+                                             'timecode': cap.get(1) } for a in current_faces ]
                     out.write(cv2.resize(frame, (640, 480)))
                     recognition_time += 0
                     i += 1
@@ -124,17 +122,21 @@ def face_detection_recognition(self, video_path, video_store_path,
             allface_positions[cap.get(1)] = []
             for (x, y, w, h) in current_faces:
                 facename_prob = 'person - NaN %'
-                value = {'position': '({}, {})'.format(x, y),
-                         'dimensions': 'W = {}, H = {}'.format(w, h)}
-                if recognizer_name:
+                value = { 'position': {'xaxis': x, 'yaxis': y},
+                          'dimensions': {'width': w, 'height': h},
+                          'frame': cap.get(1),
+                          'timecode': cap.get(1) }
+                if recid:
+                    log.debug("Face labels dict: {}".format(face_labelsDict))
                     # Predict possible faces on the original frame
-                    (facename, prob) = myrecognizer.predictFaces(gray, (x, y, w, h),
-                                                                 face_labelsDict)
+                    (facename, prob) = recognizer.predictFaces(myrecognizer, recid, gray,
+                                                    (x, y, w, h), face_labelsDict)
                     facename_prob = facename + ' - ' + str(prob) + '%'
                     if not facename:
                         facename_prob = 'person - NaN %'
                     else:
                         value['face'] = facename
+                        value['probability'] = prob
 
                 if has_bounding_boxes:
                     # Draw rectangle around the face
@@ -153,7 +155,7 @@ def face_detection_recognition(self, video_path, video_store_path,
                     cv2.putText(frame_with_faces, facename_prob, (x, y-2),
                                 cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
 
-                allface_positions[cap.get(1)].append(value)
+                allface_positions.append(value)
             rec_end = time.time()
             recognition_time += rec_end - rec_start
 
@@ -165,23 +167,13 @@ def face_detection_recognition(self, video_path, video_store_path,
                 log.error(str(e))
 
     except Exception as e:
+        log.error("Unexpected error!")
         log.error(str(e))
 
     out.release()
     cap.release()
 
-    # TODO
-    # This piece of code has to be moved whitin the while loo
     log.debug("Writing file {}".format(txt_path))
-    #for k, v in allface_positions.iteritems():
-    #    with open(txt_path, 'a') as a:
-    #        a.write("Frame {}:\n".format(k))
-    #        a.write("Face in position: {}\n".format(v[0]['position']))
-    #        a.write("Dimensions: {}\n".format(v[0]['dimensions']))
-    #for k, f in faces_count.iteritems():
-    #    with open(txt_path, 'a') as a:
-    #        a.write("Face {} found {} times:\n".format(k, f))
-
     return {'facedetection': allface_positions }
 
 
@@ -222,7 +214,7 @@ def object_detection2(self, video_path, video_store_path, framerate):
     category_index = label_map_util.create_category_index(categories)
 
     detection_time = 0
-    objects = dict()
+    objects = []
     log.debug('Object detection with tensorflow')
     log.debug('Start reading and writing frames')
     try:
@@ -292,8 +284,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
                 line_thickness=8)
 
             # Keep annotation results
-            if (len(scores[0]) > 0):
-                objects[cap.get(1)] = []
             for i in range(len(scores[0])):
                 if(scores[0][i] > 0.49):
                     data = dict()
@@ -301,12 +291,13 @@ def object_detection2(self, video_path, video_store_path, framerate):
                     ymin = boxes[0][i].item(0) * height
                     rec_width = boxes[0][i].item(3) * width - xmin
                     rec_height = boxes[0][i].item(2) * height - ymin
-                    data['position'] = '({}, {})'.format(xmin, ymin)
-                    data['dimensions'] = 'W = {}, H = {}'.format(rec_width,
-                                                                 rec_height)
+                    data['position'] = {'xaxis': xmin, 'yaxis': ymin}
+                    data['dimensions'] = {'width': rec_width, 'height': rec_height}
                     data['class'] = category_index[int(classes[0][i])]['name']
                     data['probability'] = str(scores[0][i])
-                    objects[cap.get(1)].append(data)
+                    data['frame'] = cap.get(1)
+                    data['timecode'] = cap.get(1)
+                    objects.append(data)
 
             det_end = time.time()
             detection_time += det_end - det_start
