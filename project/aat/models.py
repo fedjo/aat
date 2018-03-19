@@ -29,10 +29,14 @@ class RecognizerPreTrainedData(models.Model):
     yml_file = models.FileField(upload_to='recognizer_train_data/')
     faces = models.CharField(max_length=500, blank=True)
     csv_path = models.CharField(max_length=150, blank=True)
+    size = models.CharField(max_length=10, blank=True)
 
     def to_dict(self):
         return {
             'name': self.name,
             'recognizer': self.recognizer,
-            'faces': self.faces
+            'faces': self.faces,
+            'yml_file': self.yml_file.url,
+            'csv_path': self.csv_path,
+            'size': self.size
         }
