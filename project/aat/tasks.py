@@ -49,14 +49,8 @@ def face_detection_recognition(self, video_path, video_store_path,
         raise Exception('Cannot open video')
         return ''
 
-    txt_path = os.path.join(settings.CACHE_ROOT,
-                            os.path.basename(video_store_path).split('.')[0]+'.txt')
-
     if recid:
         (myrecognizer, face_labelsDict) = recognizer.load(recid)
-
-    detection_time = 0
-    recognition_time = 0
 
     log.debug('Start reading and writing frames')
     allface_positions = []
@@ -64,12 +58,6 @@ def face_detection_recognition(self, video_path, video_store_path,
         while(cap.isOpened()):
             ret_grab = cap.grab()
             if not ret_grab:
-                with open(os.path.join(settings.MEDIA_ROOT,
-                                       'timelapse.log'), 'a') as f:
-                    f.write('---Detection time---\n')
-                    f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
-                    f.write('---Recognition time---\n')
-                    f.write('%r() %2.2f sec\n' % ('for all faces run predictFaces',  recognition_time))
                 break
 
             # Skip frame
@@ -86,15 +74,12 @@ def face_detection_recognition(self, video_path, video_store_path,
             current_faces = []
 
             # optional implementation to use all/selected haar cascades
-            det_start = time.time()
             db_haarcascades = Cascade.objects.filter(pk__in=haarcascades).all()
             for c in db_haarcascades:
                 cascade = cv2.CascadeClassifier(c.xml_file.path)
                 current_faces.extend(cascade.detectMultiScale(gray, scaleFactor=float(scale),
                                                  minNeighbors=int(neighbors),
                                                  minSize=(int(minx), int(miny))))
-            det_end = time.time()
-            detection_time += det_end - det_start
 
             # __throw_overlapping(profiles)
 
@@ -106,15 +91,11 @@ def face_detection_recognition(self, video_path, video_store_path,
                                              'frame': cap.get(1),
                                              'timecode': cap.get(1) } for a in current_faces ]
                     out.write(cv2.resize(frame, (640, 480)))
-                    recognition_time += 0
-                    i += 1
                     continue
                 except Exception as e:
                     log.error("Cannot write new frame to video")
                     log.error(str(e))
 
-            # Measure time for recognition of faces on every frame
-            rec_start = time.time()
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
@@ -156,8 +137,6 @@ def face_detection_recognition(self, video_path, video_store_path,
                                 cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
 
                 allface_positions.append(value)
-            rec_end = time.time()
-            recognition_time += rec_end - rec_start
 
             # Write frame to video file
             try:
@@ -173,7 +152,6 @@ def face_detection_recognition(self, video_path, video_store_path,
     out.release()
     cap.release()
 
-    log.debug("Writing file {}".format(txt_path))
     return {'facedetection': allface_positions }
 
 
@@ -213,7 +191,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
                                                                 use_display_name=True)
     category_index = label_map_util.create_category_index(categories)
 
-    detection_time = 0
     objects = []
     log.debug('Object detection with tensorflow')
     log.debug('Start reading and writing frames')
@@ -221,10 +198,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
         while(cap.isOpened()):
             ret_grab = cap.grab()
             if not ret_grab:
-                with open(os.path.join(settings.MEDIA_ROOT,
-                                       'timelapse.log'), 'a') as f:
-                    f.write('---TensorFlow Detection time---\n')
-                    f.write('%r() %2.2f sec\n' % ('for all frames run detectMultiScale',  detection_time))
                 break
 
             # Skip frame
@@ -237,9 +210,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
             # Frame height, width
             height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
             width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-
-            # optional implementation to use all/selected haar cascades
-            det_start = time.time()
 
             # frame_with_objects = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_with_objects = frame.copy()
@@ -298,9 +268,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
                     data['frame'] = cap.get(1)
                     data['timecode'] = cap.get(1)
                     objects.append(data)
-
-            det_end = time.time()
-            detection_time += det_end - det_start
 
             # Write frame to video file
             try:

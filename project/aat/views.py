@@ -317,11 +317,9 @@ def form_detection(request):
 
 def process_form(request, jsondata, callback_task):
 
-    # Create video and annotations file
+    # Create video file
     log.debug('Video path is {}'.format(jsondata['content']['path']))
     video_store_path = create_annotated_video_path(jsondata)
-    annot_text_file = os.path.join(settings.CACHE_ROOT,
-                            os.path.basename(video_store_path).split('.')[0]+'.txt')
 
     # List of all the annotation to tasks to be excecuted
     header = []
@@ -462,7 +460,6 @@ def process_form(request, jsondata, callback_task):
         # Send all information back to UI
         context = {'form':  DefaultDetectionForm(),
                    'media': os.path.basename(video_serve_path),
-                   'annotations_file': annot_text_file,
                    'names': result['facedetection'],
                    'positions': result['facedetection']['positions'],
                    'objects': result['objectdetection'],
