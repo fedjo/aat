@@ -30,9 +30,9 @@ log = logging.getLogger(__name__)
 
 
 @shared_task(bind=True)
-def face_detection_recognition(self, video_path, video_store_path,
-                               recid, haarcascades, scale, neighbors,
-                               minx, miny, has_bounding_boxes, framerate):
+def face_detection_recognition(self, video_path, recid, haarcascades, scale,
+                               neighbors, minx, miny, has_bounding_boxes,
+                               framerate):
 
     log.debug('Trying to open video {}'.format(video_path))
     cap = cv2.VideoCapture(video_path)
@@ -42,7 +42,6 @@ def face_detection_recognition(self, video_path, video_store_path,
     #out = cv2.VideoWriter(video_store_path, int(fourcc), fps, (640, 480))
     #_fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     _fourcc = 875967048 #cv2.cv.CV_FOURCC(*'MP4V')
-    out = cv2.VideoWriter(video_store_path, _fourcc, fps, (640, 480))
 
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
@@ -51,6 +50,7 @@ def face_detection_recognition(self, video_path, video_store_path,
 
     if recid:
         (myrecognizer, face_labelsDict) = recognizer.load(recid)
+        log.debug("Face labels dict: {}".format(face_labelsDict))
 
     log.debug('Start reading and writing frames')
     allface_positions = []
@@ -67,6 +67,7 @@ def face_detection_recognition(self, video_path, video_store_path,
             log.debug("Read frame: {}".format(int(cap.get(1))))
             # Decode the current frame
             ret, frame = cap.retrieve()
+
             # Get the current frame in grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -84,31 +85,22 @@ def face_detection_recognition(self, video_path, video_store_path,
             # __throw_overlapping(profiles)
 
             if (not has_bounding_boxes and not recid):
-                # Write frame to video file
-                try:
-                    allface_positions += [ { 'position': {'xaxis': a[0], 'yaxis': a[1]},
-                                             'dimensions': {'width': a[2], 'height': a[3]},
-                                             'frame': cap.get(1),
-                                             'timecode': cap.get(1) } for a in current_faces ]
-                    out.write(cv2.resize(frame, (640, 480)))
-                    continue
-                except Exception as e:
-                    log.error("Cannot write new frame to video")
-                    log.error(str(e))
+                allface_positions += [ { 'position': {'xaxis': str(a[0]), 'yaxis': str(a[1])},
+                                         'dimensions': {'width': str(a[2]), 'height': str(a[3])},
+                                         'frame': str(cap.get(1)),
+                                         'timecode': str(cap.get(1)) } for a in current_faces ]
+                continue
 
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
-            frame_with_faces = frame.copy()
-            allface_positions[cap.get(1)] = []
             for (x, y, w, h) in current_faces:
                 facename_prob = 'person - NaN %'
-                value = { 'position': {'xaxis': x, 'yaxis': y},
-                          'dimensions': {'width': w, 'height': h},
-                          'frame': cap.get(1),
-                          'timecode': cap.get(1) }
+
+                value['frame'] = str(cap.get(1))
+                value['timecode'] = str(cap.get(1))
+
                 if recid:
-                    log.debug("Face labels dict: {}".format(face_labelsDict))
                     # Predict possible faces on the original frame
                     (facename, prob) = recognizer.predictFaces(myrecognizer, recid, gray,
                                                     (x, y, w, h), face_labelsDict)
@@ -117,46 +109,27 @@ def face_detection_recognition(self, video_path, video_store_path,
                         facename_prob = 'person - NaN %'
                     else:
                         value['face'] = facename
-                        value['probability'] = prob
+                        value['probability'] = str(prob)
 
                 if has_bounding_boxes:
-                    # Draw rectangle around the face
-                    cv2.rectangle(frame_with_faces,
-                                  (x, y),
-                                  (x+w, y+h),
-                                  (0, 0, 255),
-                                  4)
-                    size = cv2.getTextSize(facename_prob,
-                                           cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
-                    cv2.rectangle(frame_with_faces,
-                                  (x, y-size[1]-3),
-                                  (x+size[0]+4, y+3),
-                                  (0, 0, 255),
-                                  -1)
-                    cv2.putText(frame_with_faces, facename_prob, (x, y-2),
-                                cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+                    value['position'] = {'xaxis': str(x), 'yaxis': str(y)}
+                    value['dimensions'] = {'width': str(w), 'height': str(h)}
+
 
                 allface_positions.append(value)
 
-            # Write frame to video file
-            try:
-                out.write(cv2.resize(frame_with_faces, (640, 480)))
-            except Exception as e:
-                log.error("Cannot write new frame to video")
-                log.error(str(e))
 
     except Exception as e:
         log.error("Unexpected error!")
         log.error(str(e))
 
-    out.release()
     cap.release()
 
-    return {'facedetection': allface_positions }
+    return {'facedetection': allface_positions}
 
 
 @shared_task(bind=True)
-def object_detection2(self, video_path, video_store_path, framerate):
+def object_detection2(self, video_path, framerate):
 
     log.debug('Trying to open video {}'.format(video_path))
     cap = cv2.VideoCapture(video_path)
@@ -165,8 +138,6 @@ def object_detection2(self, video_path, video_store_path, framerate):
     # This is the avi codec
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # This is the mp4 codec
-    _fourcc = 875967048 # cv2.VideoWrite_fourcc(*'H264')
-    out = cv2.VideoWriter(video_store_path, _fourcc, fps, (640, 480))
 
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
@@ -269,22 +240,12 @@ def object_detection2(self, video_path, video_store_path, framerate):
                     data['timecode'] = cap.get(1)
                     objects.append(data)
 
-            # Write frame to video file
-            try:
-                log.debug("Write frame")
-                out.write(cv2.resize(frame_with_objects, (640, 480)))
-            except Exception as e:
-                log.error("Cannot write new frame to video")
-                log.error(str(e))
-
     except Exception as e:
         log.error(str(e))
-        out.release()
         cap.release()
         return {}
 
     log.debug("Finished TF detection")
-    out.release()
     cap.release()
     return {'objectdetection': objects}
 
@@ -315,10 +276,92 @@ def senddata(self, annotations):
     else:
         json = annotations
     log.debug("Sending data to external API")
-    requests.post(settings.EXT_SERVICE, json=json)
+    headers = {'Content-type': 'application/json'}
+    id = '1312'
+    #host = settings.EXT_SERVICE + id
+    host = settings.EXT_SERVICE
+    requests.post(host, headers=headers, json=json)
 
 
 @shared_task(bind=True)
-def returnvalues(self, annotations_list):
+def returnvalues(self, annotations_list, video_path=None):
+
+    # Process annotations_list
+    # Retrive annotation process info
+    # Convert to dict
+    tempjson = dict()
+    json = dict()
+    if(isinstance(annotations, list)):
+        [tempjson.update(i) for i in annotations]
+    else:
+        tempjson = annotations
+    for (k, v) in tempjson.iteritems():
+        newvalue = dict()
+        for elem in v:
+            if (not elem['frame'] in newvalue):
+                newvalue[elem['frame']] = []
+                newvalue[elem['frame']].append(elem)
+            else:
+                newvalue[elem['frame']].append(elem)
+        json[k] = newvalue
+
+
+    # Name of the annotated video file
+    import ntpath
+    filename = ntpath.basename(video_path)
+    annotfilename = os.path.basename(filename).split('.')[0]
+    # Add suffix
+    annotfilename += '_'
+    if ('facedetection' in json.keys()):
+        annotfilename += 'F'
+        if 'face' in json['facedetection'][0].keys():
+            annotfilename += 'R'
+        else:
+            annotfilename += 'D'
+    if('objdetection' in json.keys()):
+        annotfilename += 'O'
+    if ('transcription' in json.keys()):
+        annotfilename += 'T'
+    annotfilename += '.mp4'
+    log.debug("This is the annotated video name: {}".format(annotfilename))
+    annotfilepath = os.path.join(settings.MEDIA_ROOT, annotfilename)
+
+    # Here we construct the video with the annotations
+    cap = cv2.VideoCapture('')
+    _fourcc = 875967048 #cv2.cv.CV_FOURCC(*'MP4V')
+    out = cv2.VideoWriter(annotfilepath, _fourcc, fps, (640, 480))
+    ret, frame = cap.read()
+
+    #while cap.isOpen():
+    for k, v in json.iteritems():
+        # ################
+        # Process annotations over the frames
+        frame_with_faces = frame.copy()
+
+        # Draw rectangle around the face
+        cv2.rectangle(frame_with_faces,
+                      (x, y),
+                      (x+w, y+h),
+                      (0, 0, 255),
+                      4)
+        size = cv2.getTextSize(facename_prob,
+                               cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
+        cv2.rectangle(frame_with_faces,
+                      (x, y-size[1]-3),
+                      (x+size[0]+4, y+3),
+                      (0, 0, 255),
+                      -1)
+        cv2.putText(frame_with_faces, facename_prob, (x, y-2),
+                    cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+
+        # ##############
+
+        # Write frame to video file
+        try:
+            out.write(cv2.resize(frame_with_faces, (640, 480)))
+        except Exception as e:
+            log.error("Cannot write new frame to video")
+            log.error(str(e))
+
     log.debug("Returning values to UI")
-    return annotations_list
+    return json

@@ -89,53 +89,6 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
     return (face_labelsDict, npfaces, labels)
 
 
-# Function to return the full path where the
-# annotated video will be saved
-def create_annotated_video_path(jsondata):
-
-    filename = jsondata['content']['path']
-    if isinstance(filename, TemporaryUploadedFile):
-        filepath = filename.temporary_file_path()
-    else:
-        filepath = filename
-
-    filename = os.path.basename(filepath).split('.')[0]
-
-    newfilename = filename
-    if ('cascade' in jsondata.keys()):
-        newfilename += '-'
-        newfilename += 'facedet'
-        if 'recognizer' in jsondata.keys():
-            newfilename += '-'
-            newfilename += jsondata['recognizer']['name']
-    if('objdetector' in jsondata.keys()):
-        newfilename += '-'
-        newfilename += 'objdet'
-    if ('transcription' in jsondata.keys()):
-        newfilename += '-'
-        newfilename += 'transcibe'
-
-    newfilename += '.mp4'
-    log.debug("This is the annotated video name: {}".format(newfilename))
-    return os.path.join(settings.CACHE_ROOT, newfilename)
-
-
-# ###
-def create_name_dict_from_file():
-    d = {}
-    faces_filepath = os.path.join('/tmp', 'faces_in_current_video.txt')
-    if os.path.exists(faces_filepath):
-        with open(faces_filepath, 'r') as f:
-            lines = f.readlines()
-            for key in lines:
-                if key in d:
-                    d[key] += 1
-                else:
-                    d[key] = 1
-        os.remove(os.path.join('/tmp', 'faces_in_current_video.txt'))
-    return d
-
-
 def exec_cmd(cmd):
     try:
         p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)

@@ -90,7 +90,7 @@ def load(recid):
     ptrdataqs = RecognizerPreTrainedData.objects.filter(name=recid)
     ptrdata = ptrdataqs.get()
     recognizer = create_recognizer(ptrdata.recognizer)
-    recognizer.read('/' + ptrdata.yml_file.url)
+    recognizer.read(os.path.join(settings.MEDIA_ROOT, ptrdata.yml_file.url))
     log.debug("Successfully read pretrained file {}!".format(ptrdata.yml_file.url))
     tmp = ptrdata.faces.split(', ')
     facelabels = dict([tmp.index(i), str(i)] for i in tmp)

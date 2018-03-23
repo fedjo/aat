@@ -1,11 +1,12 @@
 from django import forms
+from aat.models import RecognizerPreTrainedData
 
 
 class DefaultDetectionForm(forms.Form):
     title = "Please specify the directory containing your videos"
-    video = forms.FileField(required=True, widget=forms.ClearableFileInput())
-    #video_dir = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}),
-    #                            required=True)
+    #video = forms.FileField(required=True, widget=forms.ClearableFileInput())
+    video = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}),
+                            required=True)
 
     detection = forms.CharField(widget=forms.HiddenInput(),
                                     required=True, initial=False)
@@ -23,9 +24,9 @@ class ComplexDetectionForm(forms.Form):
                ('No', 'No')]
 
     title = "Please upload your video in zip format"
-    video = forms.FileField(required=True, widget=forms.ClearableFileInput())
-    #video_dir = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}),
-    #                            required=True)
+    #video = forms.FileField(required=True, widget=forms.ClearableFileInput())
+    video = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}),
+                                required=True)
 
     detection = forms.CharField(widget=forms.HiddenInput(),
                                     required=True, initial=False)
@@ -36,6 +37,9 @@ class ComplexDetectionForm(forms.Form):
                                             ('false', 'Do not recognize faces')],
                                             widget=forms.Select(attrs={'class': 'form-control '
                                                 'select select-primary', 'data-toggle': 'select'}))
+    faces_database = forms.ModelChoiceField(queryset= RecognizerPreTrainedData.objects.values_list('name', flat=True),
+                                            to_field_name='facedb',
+                                            empty_label='(Nothing)')
     objdetection = forms.CharField(widget=forms.HiddenInput(),
                                    required=True, initial=False)
     transcription = forms.CharField(widget=forms.HiddenInput(),
