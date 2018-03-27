@@ -102,33 +102,30 @@ def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=Non
         ptrdataqs = RecognizerPreTrainedData.objects.filter(name=recid)
         ptrdata = ptrdataqs.get()
         recogntype = ptrdata.recognizer
-        with open(os.path.join('/tmp', 'faces_in_current_video.txt'),
-                  'a+') as f:
-            # gray_frame = cv2.cvtColor(org_img, cv2.COLOR_BGR2GRAY)
-            # for (x,y,w,h) in frames:
-            conf = 0.0
-            if ((not recogntype == 'LBPH') and
-                (not recogntype == 'KNN')):
-                # Eigen/Fisher face recognizer
-                log.debug('Eighen prediction:' + recogntype)
-                gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], size)
-                nbr_pred, conf = recognizer.predict(gray_resized)
-            elif (recognizer == 'KNN'):
-                # KNN-LBPH recognizer
-                nbr_pred, conf = recognizer.predict_knn(
-                        gray_img[y: y+h, x: x+w], 15, True, 5)
-            else:
-                # LBPH recognizer
-                nbr_pred, conf = recognizer.predict(gray_img[y:y+h, x:x+w])
-                log.debug("{} is Recognized with confidence  {}"
-                            .format(labelsDict[nbr_pred], conf))
-            if (
-                (recogntype == 'LBPH' and conf <= 160.5) or
-                (recogntype == 'FF' and conf <= 420) or
-                (recogntype == 'EF' and conf <= 2100)
-               ):
-                f.write(labelsDict[nbr_pred] + '\n')
-        return (labelsDict[nbr_pred], conf)
+        # gray_frame = cv2.cvtColor(org_img, cv2.COLOR_BGR2GRAY)
+        # for (x,y,w,h) in frames:
+        conf = 0.0
+        if ((not recogntype == 'LBPH') and
+            (not recogntype == 'KNN')):
+            # Eigen/Fisher face recognizer
+            log.debug('Eighen prediction:' + recogntype)
+            gray_resized = cv2.resize(gray_img[y: y+h, x: x+w], size)
+            nbr_pred, conf = recognizer.predict(gray_resized)
+        elif (recognizer == 'KNN'):
+            # KNN-LBPH recognizer
+            nbr_pred, conf = recognizer.predict_knn(
+                    gray_img[y: y+h, x: x+w], 15, True, 5)
+        else:
+            # LBPH recognizer
+            nbr_pred, conf = recognizer.predict(gray_img[y:y+h, x:x+w])
+            log.debug("{} is Recognized with confidence  {}"
+                        .format(labelsDict[nbr_pred], conf))
+        if (
+            (recogntype == 'LBPH' and conf <= 160.5) or
+            (recogntype == 'FF' and conf <= 420) or
+            (recogntype == 'EF' and conf <= 2100)
+           ):
+            return (labelsDict[nbr_pred], conf)
     except Exception as e:
         log.error(str(e))
         return
