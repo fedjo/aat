@@ -97,6 +97,7 @@ def face_detection_recognition(self, video_path, recid, haarcascades, scale,
             for (x, y, w, h) in current_faces:
                 facename_prob = 'person - NaN'
 
+                value = dict()
                 value['frame'] = str(cap.get(1))
                 value['timecode'] = "{0:.2f}".format(cap.get(1)/fps)
 
