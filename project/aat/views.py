@@ -196,6 +196,21 @@ def annotate(request):
                         "neighbors": { "type": "string" },
                         "minx": { "type": "string" },
                         "miny": { "type": "string" }
+                        }},
+                "manual_tags": { "type": "object",
+                    "properties": {
+                        "frame": { "type": "string" },
+                        "position": { "type": "object",
+                            "properties": {
+                                "xaxis": { "type": "string" },
+                                "yaxis": { "type": "string" }
+                                }},
+                        "dimensions": { "type": "object",
+                            "properties": {
+                                "width": { "type": "string" },
+                                "height": { "type": "string" }
+                                }},
+                        "class": { "type": "string" }
                         }}
             },
             "required": ["content"],
@@ -207,14 +222,14 @@ def annotate(request):
     except Exception as e:
         return JsonResponse({'error': 'Input JSON is not appropriate'})
 
-    callback = senddata.s()
+    if ('manual_tags' in jsondata.keys()):
+        callback = senddata.s(jsondata['manual_tags'])
+    else:
+        callback = senddata.s()
     # Transform url video path to local filesystem path
     jsondata['content']['path'] = retrieve_fromurl(jsondata['content']['path'])
     context = process_form(request, jsondata, callback)
     return JsonResponse(context)
-
-    #tr['url'] = os.path.join(request.get_host(),
-    #                         settings.STATIC_URL, context['srt_file'])
 
 
 @Clock.time
@@ -241,7 +256,7 @@ def form_detection(request):
 
                 jsondata['content'] = dict()
                 # URL of the video, in Amazon S3
-                jsondata['content']['path'] = video_path
+                jsondata['content']['path'] = retrieve_fromurl(video_path)
                 #jsondata['content']['path'] = request.POST['video_dir']
 
                 if (request.POST['detection'] == 'true'):
@@ -261,9 +276,8 @@ def form_detection(request):
                     jsondata['objdetector']['name'] = 'SSD_Mobilenet'
                     jsondata['objdetector']['framerate'] = 100
                 if (request.POST['transcription'] == 'true'):
-                    jsondata['transcription'] = 'true'
-                    jsondata['input_language'] = 'en'
-                    jsondata['output_language'] = 'en'
+                    jsondata['transcription'] = {'input_language': 'en',
+                                                 'output_language': 'en'}
 
                 jsondata['bounding_boxes'] = 'True'
 
@@ -294,7 +308,8 @@ def form_detection(request):
                     jsondata['objdetector']['name'] = 'SSD_Mobilenet'
                     jsondata['objdetector']['framerate'] = 100
                 if (request.POST['transcription'] == 'true'):
-                    jsondata['transcription'] = 'true'
+                    jsondata['transcription'] = {'input_language': 'en',
+                                                 'output_language': 'en'}
 
                 jsondata['bounding_boxes'] = form.cleaned_data['bounding_boxes']
 
@@ -306,7 +321,7 @@ def form_detection(request):
             context = process_form(request, jsondata, callback)
             if 'error' in context.keys():
                 return HttpResponseBadRequest("Error: {}".format(context['error']))
-            return render(request, 'aat/index.html', context)
+            return render(request, 'aat/home.html', context)
         else:
             log.debug(form.errors.as_data())
             return HttpResponseBadRequest("Please specify the fields missing in the form")
@@ -396,8 +411,6 @@ def process_form(request, jsondata, callback_task):
                                                       neighbors, minx, miny,
                                                       boundboxes, framerate)
             header.append(face_task)
-            # (positions, names) = result.get(timeout=None)
-            #log.debug('Names found by recognition: {}'.format(names))
 
         if('objdetector' in jsondata.keys()):
             framerate = 100
@@ -406,9 +419,6 @@ def process_form(request, jsondata, callback_task):
 
             object_task = object_detection2.s(jsondata['content']['path'], framerate)
             header.append(object_task)
-            # objects = result2.get(timeout=None)
-            #log.debug("Objects:")
-            #log.debug(objects)
 
         if ('transcription' in jsondata.keys()):
             inlang = 'en'
@@ -417,14 +427,10 @@ def process_form(request, jsondata, callback_task):
                 inlang = jsondata['transcription']['input_language']
             if ('output_language' in jsondata['transcription'].keys()):
                 outlang = jsondata['transcription']['output_language']
-            # result_sbts = transcribe.delay(jsondata['content']['path'], inlang, outlang)
-            subtitle_task = transcribe.s(jsondata['content']['path'], inlang, outlang)
+            log.debug("Host: {}".format(request.get_host()))
+            subtitle_task = transcribe.s(jsondata['content']['path'],
+                                         inlang, outlang, request.get_host())
             header.append(subtitle_task)
-            #srt_path = result_sbts.get(timeout=None)
-            #shutil.copy(srt_path, settings.STATIC_ROOT)
-            #static_srt = os.path.basename(srt_path)
-            #os.remove(srt_path)
-            #log.debug("Served SRT file is located here: {}".format(static_srt))
     except Exception as e:
         log.debug(str(e))
         context = {'error': str(e)}
@@ -436,17 +442,13 @@ def process_form(request, jsondata, callback_task):
         result = chord(header)(callback_task).get()
 
         # TO TEST
-        #video_serve_path = ''
-        #if (os.path.exists(result['annotfilepath'])):
-        #    shutil.copy(video_store_path, settings.STATIC_ROOT)
-        #    video_serve_path = os.path.join(settings.STATIC_ROOT,
-        #                                    os.path.basename(result['annotfilepath']))
-        #    os.remove(video_store_path)
+        #if (os.path.exists(result['annotvideopath'])):
+        #    shutil.copy(result['annotvideopath'], settings.STATIC_ROOT)
+        #    os.remove(result['annotvideopath'])
         # Send all information back to UI
         context = {'form':  DefaultDetectionForm(),
-                   'media': os.path.basename(video_serve_path),
-                   'names': result['facedetection'],
-                   'positions': result['facedetection']['positions'],
+                   'media': os.path.basename(result['annotvideopath']),
+                   'faces': result['facedetection'],
                    'objects': result['objectdetection'],
                    'srt_file': result['transcription']}
 

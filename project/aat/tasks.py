@@ -88,28 +88,27 @@ def face_detection_recognition(self, video_path, recid, haarcascades, scale,
                 allface_positions += [ { 'position': {'xaxis': str(a[0]), 'yaxis': str(a[1])},
                                          'dimensions': {'width': str(a[2]), 'height': str(a[3])},
                                          'frame': str(cap.get(1)),
-                                         'timecode': str(cap.get(1)) } for a in current_faces ]
+                                         'timecode': "{0:.2f}".format(cap.get(1)/fps) } for a in current_faces ]
                 continue
 
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
             for (x, y, w, h) in current_faces:
-                facename_prob = 'person - NaN %'
+                facename_prob = 'person - NaN'
 
                 value['frame'] = str(cap.get(1))
-                value['timecode'] = str(cap.get(1))
+                value['timecode'] = "{0:.2f}".format(cap.get(1)/fps)
 
                 if recid:
                     # Predict possible faces on the original frame
                     (facename, prob) = recognizer.predictFaces(myrecognizer, recid, gray,
                                                     (x, y, w, h), face_labelsDict)
-                    facename_prob = facename + ' - ' + str(prob) + '%'
                     if not facename:
-                        facename_prob = 'person - NaN %'
+                        facename_prob = 'person - NaN'
                     else:
                         value['face'] = facename
-                        value['probability'] = str(prob)
+                        value['probability'] = "{0:.2f}".format(prob)
 
                 if has_bounding_boxes:
                     value['position'] = {'xaxis': str(x), 'yaxis': str(y)}
@@ -236,8 +235,8 @@ def object_detection2(self, video_path, framerate):
                     data['dimensions'] = {'width': rec_width, 'height': rec_height}
                     data['class'] = category_index[int(classes[0][i])]['name']
                     data['probability'] = str(scores[0][i])
-                    data['frame'] = cap.get(1)
-                    data['timecode'] = cap.get(1)
+                    data['frame'] = str(cap.get(1))
+                    data['timecode'] = "{0:.2f}".format(cap.get(1) / fps)
                     objects.append(data)
 
     except Exception as e:
@@ -251,26 +250,31 @@ def object_detection2(self, video_path, framerate):
 
 
 @shared_task(bind=True)
-def transcribe(self, video_path, inlang, outlang):
+def transcribe(self, video_path, inlang, outlang, instanceurl):
     log.debug("Start transcribing video")
+    import ntpath
 
-    cmd = ['autosub', '-S', inlang, '-D', outlang, '-C 4', video_path]
+    srtpath = os.path.join(settings.STATIC_ROOT,
+                           ntpath.basename(video_path).split('.')[0] + '.srt')
+    cmd = ['autosub', '-S', inlang, '-D', outlang, '-C 4',
+           '-o', srtpath, video_path]
     stdout = exec_cmd(cmd)
-    srt_path = video_path.split('.')[0] + '.srt'
-    log.debug("Created SRT path: {}".format(srt_path))
+    log.debug("Created SRT path: {}".format(srtpath))
 
     # shutil.rmtree(frames_temp_path)
     # cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
            #'-c', 'copy', '-c:s', 'mov_text', video_path]
     # stdout = exec_cmd(cmd)
 
-    return {'transcription': srt_path}
+    return {'transcription': ntpath.basename(srtpath)}
 
 
 @shared_task(bind=True)
-def senddata(self, annotations):
+def senddata(self, annotations, manual_tags=None):
 
     json = dict()
+    if (manual_tags and isinstance(manual_tags, dict)):
+        json['manual_tags'] = manual_tags
     if(isinstance(annotations, list)):
         [json.update(i) for i in annotations]
     else:
@@ -291,11 +295,14 @@ def returnvalues(self, annotations_list, video_path=None):
     # Convert to dict
     tempjson = dict()
     json = dict()
-    if(isinstance(annotations, list)):
-        [tempjson.update(i) for i in annotations]
+    if(isinstance(annotations_list, list)):
+        [tempjson.update(i) for i in annotations_list]
     else:
-        tempjson = annotations
+        tempjson = annotations_list
     for (k, v) in tempjson.iteritems():
+        if(k == 'transcription'):
+            json[k] = v
+            continue
         newvalue = dict()
         for elem in v:
             if (not elem['frame'] in newvalue):
@@ -305,7 +312,7 @@ def returnvalues(self, annotations_list, video_path=None):
                 newvalue[elem['frame']].append(elem)
         json[k] = newvalue
 
-
+    task_list = []
     # Name of the annotated video file
     import ntpath
     filename = ntpath.basename(video_path)
@@ -313,55 +320,71 @@ def returnvalues(self, annotations_list, video_path=None):
     # Add suffix
     annotfilename += '_'
     if ('facedetection' in json.keys()):
+        task_list.append('facedetection')
         annotfilename += 'F'
-        if 'face' in json['facedetection'][0].keys():
-            annotfilename += 'R'
-        else:
-            annotfilename += 'D'
-    if('objdetection' in json.keys()):
+        #if face' in json['facedetection'][0].keys():
+        #    annotfilename += 'R'
+        #else:
+        #    annotfilename += 'D'
+    if('objectdetection' in json.keys()):
+        task_list.append('objectdetection')
         annotfilename += 'O'
     if ('transcription' in json.keys()):
         annotfilename += 'T'
     annotfilename += '.mp4'
     log.debug("This is the annotated video name: {}".format(annotfilename))
-    annotfilepath = os.path.join(settings.MEDIA_ROOT, annotfilename)
+    annotfilepath = os.path.join(settings.STATIC_ROOT, annotfilename)
 
     # Here we construct the video with the annotations
-    cap = cv2.VideoCapture('')
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
     _fourcc = 875967048 #cv2.cv.CV_FOURCC(*'MP4V')
     out = cv2.VideoWriter(annotfilepath, _fourcc, fps, (640, 480))
-    ret, frame = cap.read()
 
-    #while cap.isOpen():
-    for k, v in json.iteritems():
-        # ################
-        # Process annotations over the frames
-        frame_with_faces = frame.copy()
+    log.debug(json)
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret:
+            fidx = cap.get(1)
+            for task in task_list:
+                if str(fidx) in json[task].keys():
+                    for e in json[task][str(fidx)]:
+                        x = int(e['position']['xaxis'])
+                        y = int(e['position']['yaxis'])
+                        w = int(e['dimensions']['width'])
+                        h = int(e['dimensions']['height'])
+                        if (task=='objectdetection'):
+                            _class = e['class']
+                            prob = e['probability']
+                        else:
+                            if 'face' in e.keys():
+                                _class = e['face']
+                                prob = e['probability']
+                            else:
+                                _class = 'person'
+                                prob = 0
+                        facename_prob = _class + '-' + prob + '%'
+                        # Draw rectangle around the face
+                        cv2.rectangle(frame, (x, y), (x+w, y+h),
+                                      (0, 0, 255), 4)
+                        size = cv2.getTextSize(facename_prob, cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
+                        cv2.rectangle(frame, (x, y-size[1]-3),
+                                      (x+size[0]+4, y+3), (0, 0, 255), -1)
+                        cv2.putText(frame, facename_prob, (x, y-2),
+                        cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
 
-        # Draw rectangle around the face
-        cv2.rectangle(frame_with_faces,
-                      (x, y),
-                      (x+w, y+h),
-                      (0, 0, 255),
-                      4)
-        size = cv2.getTextSize(facename_prob,
-                               cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
-        cv2.rectangle(frame_with_faces,
-                      (x, y-size[1]-3),
-                      (x+size[0]+4, y+3),
-                      (0, 0, 255),
-                      -1)
-        cv2.putText(frame_with_faces, facename_prob, (x, y-2),
-                    cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+            # Write frame to video file
+            try:
+                out.write(cv2.resize(frame, (640, 480)))
+            except Exception as e:
+                log.error("Cannot write new frame to video")
+                log.error(str(e))
+        else:
+            break
 
-        # ##############
-
-        # Write frame to video file
-        try:
-            out.write(cv2.resize(frame_with_faces, (640, 480)))
-        except Exception as e:
-            log.error("Cannot write new frame to video")
-            log.error(str(e))
+    cap.release()
+    out.release()
+    tempjson['annotvideopath'] = annotfilepath
 
     log.debug("Returning values to UI")
-    return json
+    return tempjson
