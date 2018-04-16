@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'revproxy',
     'social_django',
     'aat'
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -193,8 +195,12 @@ SOCIAL_AUTH_AUTH0_SCOPE = [
     'profile'
 ]
 
+# Django CORS headers
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = False
+
 # Service where Automatic Annotation Tools sends the generated data
-EXT_SERVICE = 'http://82.212.102.18:8001'
+EXT_SERVICE = 'http://83.212.102.18:8001'
 
 # Override configuration with files that extend this one in local_settings/
 
