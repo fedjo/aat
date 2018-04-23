@@ -122,6 +122,7 @@ def face_detection_recognition(self, video_path, recid, haarcascades, scale,
     except Exception as e:
         log.error("Unexpected error!")
         log.error(str(e))
+        return {'fd_error': str(e)}
 
     cap.release()
 
@@ -243,7 +244,7 @@ def object_detection2(self, video_path, framerate):
     except Exception as e:
         log.error(str(e))
         cap.release()
-        return {}
+        return {'od_error': str(e)}
 
     log.debug("Finished TF detection")
     cap.release()
@@ -259,8 +260,12 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
                            ntpath.basename(video_path).split('.')[0] + '.srt')
     cmd = ['autosub', '-S', inlang, '-D', outlang, '-C 4',
            '-o', srtpath, video_path]
-    stdout = exec_cmd(cmd)
-    log.debug("Created SRT path: {}".format(srtpath))
+    try:
+        stdout = exec_cmd(cmd)
+        log.debug("Created SRT path: {}".format(srtpath))
+    except Exception as e:
+        log.error(str(e))
+        return {'tr_error': str(e)}
 
     # shutil.rmtree(frames_temp_path)
     # cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
@@ -271,21 +276,48 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
 
 
 @shared_task(bind=True)
-def senddata(self, annotations, manual_tags=None):
+def senddata(self, annotations, id=None, manual_tags=None):
 
     json = dict()
-    if (manual_tags and isinstance(manual_tags, dict)):
-        json['manual_tags'] = manual_tags
+    json['entity-type'] = 'document'
+    json['properties'] = {}
+    json['properties']['dc:source'] = ['InternetArchive']
+    json['properties']['dc:description'] = ['description']
+    json['properties']['ann:Annotation'] = {}
+    json['properties']['ann:Annotation']['srptStatus'] = 'NOT SENT'
+    json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
+
     if(isinstance(annotations, list)):
-        [json.update(i) for i in annotations]
+        [json['properties']['ann:Annotation'].update(i) for i in annotations]
     else:
-        json = annotations
+        json['properties']['ann:Annotation'].update(annotations)
+    if (manual_tags and isinstance(manual_tags, dict)):
+        json['properties']['ann:Annotation']['manual_tags'] = manual_tags
+
     log.debug("Sending data to external API")
-    headers = {'Content-type': 'application/json'}
-    id = '1312'
-    #host = settings.EXT_SERVICE + id
-    host = settings.EXT_SERVICE
-    requests.post(host, headers=headers, json=json)
+    headers = {'Content-type': 'application/json',
+               'Authorization': 'Basic QWRtaW5pc3RyYXRvcjpBZG1pbmlzdHJhdG9y'}
+
+    id = 'b1d8cc44-66ae-400b-9f33-767de884b756'
+    host = settings.EXT_SERVICE + id
+
+    log.debug(json)
+    for k in json.keys():
+        if('error' in k):
+            if (httppost(host, json[k]).status_code == 200):
+                log.debug("Reporting error to MCSSR succeeded!")
+            else:
+                log.debug("Reporting error to MCSSR failed with code {}, "
+                          "msg: {}").format(r.status_code, r.text)
+            del json[k]
+
+    req=requests.put(host, headers=headers, json=json)
+    if (req.status_code == 200):
+        log.debug("Sending annotations to MCSSR succeeded!")
+    else:
+        log.debug("Sending annotations to MCSSR failed!")
+    log.debug(req.text)
+
 
 
 @shared_task(bind=True)

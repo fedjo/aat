@@ -2,6 +2,7 @@ import os
 import csv
 import cv2
 import logging
+import requests
 import subprocess
 from subprocess import PIPE
 
@@ -89,15 +90,26 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
     return (face_labelsDict, npfaces, labels)
 
 
+# Send request to remote machine
+def httppost(url, message):
+    payload = {'message': message}
+    return requests.post(url, data=payload)
+
+
+# Run a command
 def exec_cmd(cmd):
     try:
-        p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        cmd.pop()
-        if stdout:
-            log.debug(stdout)
-    except Exception as e:
-        log.error("Unexpected error: {}".format(str(e)))
-        raise
-    return stdout
+        log.debug("The command to be executed: %s", cmd)
+        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        log.debug(output)
+    except OSError as exc:
+        raise Exception("Couldn't execute command '%s'. Error was: %s."
+                        % (cmd, exc))
+    except subprocess.CalledProcessError as exc:
+        msg = "Command '%s' returned exit status %s." % (' '.join(exc.cmd),
+                                                         exc.returncode)
+        msg += " Output was:"
+        msg += ("\n%s" % exc.output) if exc.output else " ''"
+        raise Exception(msg)
 
+    return

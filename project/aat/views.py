@@ -222,10 +222,11 @@ def annotate(request):
     except Exception as e:
         return JsonResponse({'error': 'Input JSON is not appropriate'})
 
+    id = jsondata['content']['path'].rsplit('/', 1)[-1]
     if ('manual_tags' in jsondata.keys()):
-        callback = senddata.s(jsondata['manual_tags'])
+        callback = senddata.s(id=id, manual_tags=jsondata['manual_tags'])
     else:
-        callback = senddata.s()
+        callback = senddata.s(id=id)
     # Transform url video path to local filesystem path
     jsondata['content']['path'] = retrieve_fromurl(jsondata['content']['path'])
     context = process_form(request, jsondata, callback)
