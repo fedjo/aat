@@ -48,13 +48,13 @@ def face_detection_recognition(self, video_path, recid, haarcascades, scale,
         raise Exception('Cannot open video')
         return ''
 
-    if recid:
-        (myrecognizer, face_labelsDict) = recognizer.load(recid)
-        log.debug("Face labels dict: {}".format(face_labelsDict))
-
-    log.debug('Start reading and writing frames')
-    allface_positions = []
     try:
+        if recid:
+            (myrecognizer, face_labelsDict) = recognizer.load(recid)
+            log.debug("Face labels dict: {}".format(face_labelsDict))
+
+        log.debug('Start reading and writing frames')
+        allface_positions = []
         while(cap.isOpened()):
             ret_grab = cap.grab()
             if not ret_grab:
@@ -149,12 +149,15 @@ def object_detection2(self, video_path, framerate):
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
     MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
+    # MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_oid_2018_01_28'
     PATH_TO_CKPT = os.path.join(CWD_PATH, 'object_detection', MODEL_NAME, 'frozen_inference_graph.pb')
 
     # List of the strings that is used to add correct label for each box.
     PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
+    # PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', ' oid_bbox_trainable_label_map.pbtxt')
 
     NUM_CLASSES = 90
+    # NUM_CLASSES = 545
 
     # Loading label map
     label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -298,7 +301,6 @@ def senddata(self, annotations, id=None, manual_tags=None):
     headers = {'Content-type': 'application/json',
                'Authorization': 'Basic QWRtaW5pc3RyYXRvcjpBZG1pbmlzdHJhdG9y'}
 
-    id = 'b1d8cc44-66ae-400b-9f33-767de884b756'
     host = settings.EXT_SERVICE + id
 
     log.debug(json)
@@ -374,7 +376,7 @@ def returnvalues(self, annotations_list, video_path=None):
     _fourcc = 875967048 #cv2.cv.CV_FOURCC(*'MP4V')
     out = cv2.VideoWriter(annotfilepath, _fourcc, fps, (640, 480))
 
-    log.debug(json)
+    #log.debug(json)
     while(cap.isOpened()):
         ret, frame = cap.read()
         if ret:
@@ -395,7 +397,7 @@ def returnvalues(self, annotations_list, video_path=None):
                                 prob = e['probability']
                             else:
                                 _class = 'person'
-                                prob = 0
+                                prob = "0"
                         facename_prob = _class + '-' + prob + '%'
                         # Draw rectangle around the face
                         cv2.rectangle(frame, (x, y), (x+w, y+h),

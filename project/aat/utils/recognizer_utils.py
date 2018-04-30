@@ -88,9 +88,13 @@ def train(recogntype, facesdbname, facesdbpath, size):
 # Load a YAML file to recognizer
 def load(recid):
     ptrdataqs = RecognizerPreTrainedData.objects.filter(name=recid)
-    ptrdata = ptrdataqs.get()
+    ptrdata = ptrdataqs.last()
     recognizer = create_recognizer(ptrdata.recognizer)
-    recognizer.read(os.path.join(settings.MEDIA_ROOT, ptrdata.yml_file.url))
+    log.debug(ptrdata.yml_file.url)
+    if('data/' in ptrdata.yml_file.url):
+        recognizer.read(os.path.join('/', ptrdata.yml_file.url))
+    else:
+        recognizer.read(os.path.join(settings.MEDIA_ROOT, ptrdata.yml_file.url))
     log.debug("Successfully read pretrained file {}!".format(ptrdata.yml_file.url))
     tmp = ptrdata.faces.split(', ')
     facelabels = dict([tmp.index(i), str(i)] for i in tmp)
@@ -100,7 +104,7 @@ def load(recid):
 def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=None):
     try:
         ptrdataqs = RecognizerPreTrainedData.objects.filter(name=recid)
-        ptrdata = ptrdataqs.get()
+        ptrdata = ptrdataqs.last()
         recogntype = ptrdata.recognizer
         # gray_frame = cv2.cvtColor(org_img, cv2.COLOR_BGR2GRAY)
         # for (x,y,w,h) in frames:
@@ -118,14 +122,19 @@ def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=Non
         else:
             # LBPH recognizer
             nbr_pred, conf = recognizer.predict(gray_img[y:y+h, x:x+w])
-            log.debug("{} is Recognized with confidence  {}"
-                        .format(labelsDict[nbr_pred], conf))
-        if (
-            (recogntype == 'LBPH' and conf <= 160.5) or
-            (recogntype == 'FF' and conf <= 420) or
-            (recogntype == 'EF' and conf <= 2100)
-           ):
-            return (labelsDict[nbr_pred], conf)
+            if nbr_pred >= 0:
+                log.debug("{} is Recognized with confidence  {}"
+                           .format(labelsDict[nbr_pred], conf))   
+                if (
+                    (recogntype == 'LBPH' and conf <= 144.5) or
+                    (recogntype == 'FF' and conf <= 420) or
+                    (recogntype == 'EF' and conf <= 2100)
+                   ):
+                    return (labelsDict[nbr_pred], conf)
+                else:
+                    return ('', 0.0)
+            else: 
+                return ('', 0.0)
     except Exception as e:
         log.error(str(e))
         return
