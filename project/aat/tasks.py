@@ -313,12 +313,21 @@ def senddata(self, annotations, id=None, manual_tags=None):
                           "msg: {}").format(r.status_code, r.text)
             del json[k]
 
-    req=requests.put(host, headers=headers, json=json)
-    if (req.status_code == 200):
+    req = requests.Request('PUT', host, headers=headers, json=json)
+    prepared = req.prepare()
+    log.debug('{}\n{}\n{}\n\n{}'.format(
+        '-----------START-----------',
+        prepared.method + ' ' + prepared.url,
+        '\n'.join('{}: {}'.format(k, v) for k, v in prepared.headers.items()),
+        prepared.body,
+    ))
+    s = requests.Session()
+    resp = s.send(prepared)
+    if (resp.status_code == 200):
         log.debug("Sending annotations to MCSSR succeeded!")
     else:
         log.debug("Sending annotations to MCSSR failed!")
-    log.debug(req.text)
+    log.debug(resp.text)
 
 
 
