@@ -71,6 +71,10 @@ def read_csv_file(recogn_name, csv_path, cascade, size):
             face_labelsDict[int(row[1])] = str(row[0]).split('/')[-2:][0]
             image = cv2.imread(os.path.join(settings.STATIC_ROOT, str(row[0])))
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            # TODO
+            # Check if a face was found on every single image
+            # or just delete this line, assuming that every image
+            # has a face
             main_faces = cascade.detectMultiScale(gray, 1.1, 6)
             if len(main_faces) == 0:
                 continue
