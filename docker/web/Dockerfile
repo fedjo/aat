@@ -22,6 +22,7 @@ ENV DJANGO_SETTINGS_MODULE=opencvFaceRec.settings \
     FACEREC_APP_DIR=/facerec/project \
     FACEREC_MEDIA_DIR=/data/media \
     FACEREC_CACHE_DIR=/data/cache \
+    FACEREC_S3_DIR=/data/s3 \
     UWSGI_HTTP_SOCKET=0.0.0.0:8000 \
     UWSGI_PROCESSES=4 \
     CELERY_PROCESSES=4 \

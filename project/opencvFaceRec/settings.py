@@ -156,10 +156,13 @@ USE_TZ = True
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'data/')
 
-
 # Tomotech cache directory
 
 CACHE_ROOT = os.path.join(BASE_DIR, 'cache/')
+
+# Amazon S3 directory
+
+S3_ROOT = os.path.join(BASE_DIR, 's3/')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
