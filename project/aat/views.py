@@ -222,11 +222,10 @@ def annotate(request):
     except Exception as e:
         return JsonResponse({'error': 'Input JSON is not appropriate'})
 
-    id = jsondata['content']['path'].rsplit('/', 1)[-1]
     if ('manual_tags' in jsondata.keys()):
-        callback = senddata.s(id=id, manual_tags=jsondata['manual_tags'])
+        callback = senddata.s(id=jsondata['content']['uid'], manual_tags=jsondata['manual_tags'])
     else:
-        callback = senddata.s(id=id)
+        callback = senddata.s(id=jsondata['content']['uid'])
     # Transform url video path to local filesystem path
     jsondata['content']['path'] = retrieve_fromurl(jsondata['content']['path'])
     context = process_form(request, jsondata, callback)
@@ -267,15 +266,16 @@ def form_detection(request):
                     jsondata['cascade']['neighbors'] = 5
                     jsondata['cascade']['minx'] = 30
                     jsondata['cascade']['miny'] = 30
-                    jsondata['cascade']['framerate'] = 50
+                    jsondata['cascade']['framerate'] = 10
 
                 if (request.POST['recognizer'] == 'true'):
                     jsondata['recognizer'] = dict()
-                    jsondata['recognizer']['name'] = 'mecanex_LBPHfaces_model_5.yml'
+                    #jsondata['recognizer']['name'] = 'mecanex_LBPHfaces_model_5.yml'
+                    jsondata['recognizer']['name'] = 'Italian_Demo_LBPH.yml'
                 if (request.POST['objdetection'] == 'true'):
                     jsondata['objdetector'] = dict()
                     jsondata['objdetector']['name'] = 'SSD_Mobilenet'
-                    jsondata['objdetector']['framerate'] = 100
+                    jsondata['objdetector']['framerate'] = 300
                 if (request.POST['transcription'] == 'true'):
                     jsondata['transcription'] = {'input_language': 'en',
                                                  'output_language': 'en'}
@@ -298,7 +298,7 @@ def form_detection(request):
                     jsondata['cascade']['neighbors'] = form.cleaned_data['neighbors']
                     jsondata['cascade']['minx'] = form.cleaned_data['min_x_dimension']
                     jsondata['cascade']['miny'] = form.cleaned_data['min_y_dimension']
-                    jsondata['cascade']['framerate'] = 50
+                    jsondata['cascade']['framerate'] = 10
 
                 if (request.POST['recognizer'] != 'false'):
                     jsondata['recognizer'] = dict()
@@ -307,7 +307,7 @@ def form_detection(request):
                 if (request.POST['objdetection'] == 'true'):
                     jsondata['objdetector'] = dict()
                     jsondata['objdetector']['name'] = 'SSD_Mobilenet'
-                    jsondata['objdetector']['framerate'] = 100
+                    jsondata['objdetector']['framerate'] = 300
                 if (request.POST['transcription'] == 'true'):
                     jsondata['transcription'] = {'input_language': 'en',
                                                  'output_language': 'en'}
@@ -397,7 +397,7 @@ def process_form(request, jsondata, callback_task):
                     return {'error': 'The specified recognizer *{}* '
                             'was not found'.format(jsondata['recognizer']['name'])}
 
-                ptrdata = ptrdataqs.get()
+                ptrdata = ptrdataqs.last()
                 log.debug('Selected recognizer is {}'.format(ptrdata.recognizer))
                 log.debug('The faces file has name {}'.format(ptrdata.name))
 
@@ -435,6 +435,7 @@ def process_form(request, jsondata, callback_task):
     except Exception as e:
         log.debug(str(e))
         context = {'error': str(e)}
+        return context
 
     if 'senddata' in callback_task.name:
         chord(header)(callback_task)
@@ -459,11 +460,14 @@ def process_form(request, jsondata, callback_task):
 def retrieve_fromurl(url):
     if ('http' in url):
         try:
-            import urllib2
-            videopath = os.path.join(settings.MEDIA_ROOT, url[url.rfind("/")+1:])
-            contents = urllib2.urlopen(url).read()
-            with open(videopath, 'a+') as v:
-                v.write(contents)
+            import requests 
+            videopath = os.path.join(settings.MEDIA_ROOT, 'static', 'AAT_downloads', url[url.rfind("/")+1:])
+            auth_header = {'Authorization': 'Basic QWRtaW5pc3RyYXRvcjpBZG1pbmlzdHJhdG9y'}
+            req = requests.get(url, headers=auth_header, stream=True) 
+            with open(videopath, 'wb') as v:
+                for chunk in req.iter_content(chunk_size=1024):
+                    if chunk:
+                        v.write(chunk)
         except Exception as e:
             log.error(str(e))
             return
