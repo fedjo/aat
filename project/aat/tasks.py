@@ -284,10 +284,7 @@ def senddata(self, annotations, id=None, manual_tags=None):
     json = dict()
     json['entity-type'] = 'document'
     json['properties'] = {}
-    json['properties']['dc:source'] = ['InternetArchive']
-    json['properties']['dc:description'] = ['description']
     json['properties']['ann:Annotation'] = {}
-    json['properties']['ann:Annotation']['srptStatus'] = 'NOT SENT'
     json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
 
     if(isinstance(annotations, list)):
