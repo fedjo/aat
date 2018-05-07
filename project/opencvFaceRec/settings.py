@@ -203,7 +203,10 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = False
 
 # Service where Automatic Annotation Tools sends the generated data
-EXT_SERVICE = 'http://83.212.102.18:8001'
+#EXT_SERVICE = 'http://83.212.102.18:8001'
+EXT_SERVICE = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8080/nuxeo/api/v1/id/'
+import base64
+EXT_BASIC_AUTH = base64.b64encode('USERNAME:PASSWORD')
 
 # Override configuration with files that extend this one in local_settings/
 

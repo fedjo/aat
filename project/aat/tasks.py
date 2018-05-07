@@ -299,7 +299,7 @@ def senddata(self, annotations, id=None, manual_tags=None):
 
     log.debug("Sending data to external API")
     headers = {'Content-type': 'application/json',
-               'Authorization': 'Basic QWRtaW5pc3RyYXRvcjpBZG1pbmlzdHJhdG9y'}
+               'Authorization': 'Basic ' + settings.EXT_BASIC_AUTH}
 
     host = settings.EXT_SERVICE + id
 
