@@ -12,13 +12,15 @@ from celery import chord
 
 
 from django.core.files.storage import FileSystemStorage
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.utils.http import urlencode
 from django.http import HttpResponse, JsonResponse, \
         HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout as auth_logout
 
 from .models import Configuration, Cascade, RecognizerPreTrainedData
 from .forms import ComplexDetectionForm, DefaultDetectionForm
@@ -35,8 +37,21 @@ def index(request):
     return render(request, 'aat/index.html')
 
 
+@login_required
 def about(request):
     return render(request, 'aat/about.html')
+
+
+def logout(request):
+
+    client_id = os.environ.get('AUTH0_CLIENT_ID')
+    auth_domain = os.environ.get('AUTH0_DOMAIN')
+
+    auth_logout(request)
+
+    params = {'returnTo': 'http://producer-toolkit.eu/#/login', 'client_id': client_id}
+
+    return redirect('https://' + auth_domain + '/v2/logout?' + urlencode(params))
 
 
 @login_required
@@ -461,7 +476,7 @@ def retrieve_fromurl(url):
     if ('http' in url):
         try:
             import requests 
-            videopath = os.path.join(settings.MEDIA_ROOT, 'static', 'AAT_downloads', url[url.rfind("/")+1:])
+            videopath = os.path.join(settings.S3_ROOT, 'AAT_downloads', url[url.rfind("/")+1:])
             auth_header = {'Authorization': 'Basic QWRtaW5pc3RyYXRvcjpBZG1pbmlzdHJhdG9y'}
             req = requests.get(url, headers=auth_header, stream=True) 
             with open(videopath, 'wb') as v:
