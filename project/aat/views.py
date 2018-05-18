@@ -279,9 +279,9 @@ def form_detection(request):
                     jsondata['cascade']['name'] = [1]
                     jsondata['cascade']['scale'] = 1.3
                     jsondata['cascade']['neighbors'] = 5
-                    jsondata['cascade']['minx'] = 30
-                    jsondata['cascade']['miny'] = 30
-                    jsondata['cascade']['framerate'] = 10
+                    jsondata['cascade']['minx'] = 60
+                    jsondata['cascade']['miny'] = 60
+                    jsondata['cascade']['framerate'] = 20
 
                 if (request.POST['recognizer'] == 'true'):
                     jsondata['recognizer'] = dict()
@@ -290,7 +290,7 @@ def form_detection(request):
                 if (request.POST['objdetection'] == 'true'):
                     jsondata['objdetector'] = dict()
                     jsondata['objdetector']['name'] = 'SSD_Mobilenet'
-                    jsondata['objdetector']['framerate'] = 300
+                    jsondata['objdetector']['framerate'] = 65 
                 if (request.POST['transcription'] == 'true'):
                     jsondata['transcription'] = {'input_language': 'en',
                                                  'output_language': 'en'}
@@ -463,11 +463,12 @@ def process_form(request, jsondata, callback_task):
         #    shutil.copy(result['annotvideopath'], settings.STATIC_ROOT)
         #    os.remove(result['annotvideopath'])
         # Send all information back to UI
+        
         context = {'form':  DefaultDetectionForm(),
                    'media': os.path.basename(result['annotvideopath']),
-                   'faces': result['facedetection'],
-                   'objects': result['objectdetection'],
-                   'srt_file': result['transcription']}
+                   'faces': result['facedetection'] if 'facedetection' in result.keys() else {},
+                   'objects': result['objectdetection'] if 'objectdetection' in result.keys() else {},
+                   'srt_file': result['transcription'] if 'transcription' in result.keys() else ""}
 
     return context
 
