@@ -42,10 +42,10 @@ def train(recogntype, facesdbname, facesdbpath, size):
                                                         size)
     trained_data_path = os.path.join(settings.MEDIA_ROOT,
                                      'recognizer_train_data')
-    if (recogntype == 'LBPH' or recogntype == 'KNN'):
-        pretrained_filepath = os.path.join(trained_data_path,
-                                       facesdbname.replace('.zip', '') +
-                                       '_' + recogntype + '.yml')
+    if (recogntype == 'LBPH'):
+        pretrained_filepath = os.path.join(trained_data_path, 'MyFaces.yml')
+    elif (recogntype == 'KNN'):
+        pretrained_filepath = os.path.join(trained_data_path, 'MyKNNFaces.yml')
     else:
         pretrained_filepath = os.path.join(trained_data_path,
                                        facesdbname.replace('.zip', '') +
@@ -55,9 +55,14 @@ def train(recogntype, facesdbname, facesdbpath, size):
 
     recognizer = create_recognizer(recogntype)
     try:
-        log.debug("Creating trained file: {}"
-                  .format(pretrained_filepath))
-        recognizer.train(npfaces, numpy.array(labels))
+        if ((recogntype == 'EF' or recogntype == 'FF') or
+            (recogntype == 'LBPH' and not os.path.isfile(pretrained_filepath))):
+            log.debug("Creating trained file: {}".format(pretrained_filepath))
+            recognizer.train(npfaces, numpy.array(labels))
+        else:
+            log.debug("Updating the trained file: {}".format(pretrained_filepath))
+            recognizer.read(pretrained_filepath)
+            recognizer.update(npfaces, numpy.array(labels))
         recognizer.write(pretrained_filepath)
         # Save the YAML pretrained file to db
         prtrdata = RecognizerPreTrainedData()
@@ -124,7 +129,7 @@ def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=Non
             nbr_pred, conf = recognizer.predict(gray_img[y:y+h, x:x+w])
             if nbr_pred >= 0:
                 log.debug("{} is Recognized with confidence  {}"
-                           .format(labelsDict[nbr_pred], conf))   
+                           .format(labelsDict[nbr_pred], conf))
                 if (
                     (recogntype == 'LBPH' and conf <= 144.5) or
                     (recogntype == 'FF' and conf <= 420) or
@@ -133,7 +138,7 @@ def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=Non
                     return (labelsDict[nbr_pred], conf)
                 else:
                     return ('', 0.0)
-            else: 
+            else:
                 return ('', 0.0)
     except Exception as e:
         log.error(str(e))
