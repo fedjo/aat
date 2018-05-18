@@ -374,7 +374,12 @@ def returnvalues(self, annotations_list, video_path=None):
         annotfilename += 'T'
     annotfilename += '.mp4'
     log.debug("This is the annotated video name: {}".format(annotfilename))
-    annotfilepath = os.path.join(settings.STATIC_ROOT, annotfilename)
+    s3dir = os.getenv('FACEREC_S3_DIR', '/data/s3/')
+    annotfilepath = os.path.join(s3dir, 'Annotated_Videos', annotfilename)
+    static_annot_symlink = os.path.join(settings.STATIC_ROOT, annotfilename)
+    if (os.path.islink(static_annot_symlink)):
+        os.remove(static_annot_symlink)
+    os.symlink(annotfilepath, static_annot_symlink)
 
     # Here we construct the video with the annotations
     cap = cv2.VideoCapture(video_path)
