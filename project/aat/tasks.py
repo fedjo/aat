@@ -45,8 +45,7 @@ def face_detection_recognition(self, video_path, recid, haarcascades, scale,
 
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
-        raise Exception('Cannot open video')
-        return ''
+        return {'fd_error': 'Cannot open video'}
 
     try:
         if recid:
@@ -142,8 +141,7 @@ def object_detection2(self, video_path, framerate):
 
     if not(cap.isOpened()):
         log.debug("Cannot open video path {}".format(video_path))
-        raise Exception('Cannot open video')
-        return {}
+        return {'od_error': 'Cannot open video'}
 
     CWD_PATH = os.path.join(os.getenv('FACEREC_APP_DIR', '..'), 'aat')
 
@@ -285,30 +283,33 @@ def senddata(self, annotations, id=None, manual_tags=None):
     json['entity-type'] = 'document'
     json['properties'] = {}
     json['properties']['ann:Annotation'] = {}
-    json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
 
-    if(isinstance(annotations, list)):
-        [json['properties']['ann:Annotation'].update(i) for i in annotations]
+
+    if (not isinstance(annotations, list)):
+        _annotations = [ annotations ]
     else:
-        json['properties']['ann:Annotation'].update(annotations)
-    if (manual_tags and isinstance(manual_tags, dict)):
-        json['properties']['ann:Annotation']['manual_tags'] = manual_tags
+        _annotations = annotations
+
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    if ('error' in [x[3:] for x in flatten([a.keys() for a in _annotations])]):
+        log.debug("Error to MCSSR!")
+        json['properties']['ann:Annotation']['annotationStatus'] = 'FAILURE'
+    else:
+        log.debug("Annotations to MCSSR!")
+        json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
+
+        [json['properties']['ann:Annotation'].update(i) for i in annotations]
+        if (manual_tags and isinstance(manual_tags, dict)):
+            json['properties']['ann:Annotation']['manual_tags'] = manual_tags
+
 
     log.debug("Sending data to external API")
-    headers = {'Content-type': 'application/json',
-               'Authorization': 'Basic ' + settings.EXT_BASIC_AUTH}
+    log.debug(json)
 
     host = settings.EXT_SERVICE + id
-
-    log.debug(json)
-    for k in json.keys():
-        if('error' in k):
-            if (httppost(host, json[k]).status_code == 200):
-                log.debug("Reporting error to MCSSR succeeded!")
-            else:
-                log.debug("Reporting error to MCSSR failed with code {}, "
-                          "msg: {}").format(r.status_code, r.text)
-            del json[k]
+    host = settings.EXT_SERVICE
+    headers = {'Content-type': 'application/json',
+               'Authorization': 'Basic ' + settings.EXT_BASIC_AUTH}
 
     req = requests.Request('PUT', host, headers=headers, json=json)
     prepared = req.prepare()
@@ -321,9 +322,9 @@ def senddata(self, annotations, id=None, manual_tags=None):
     s = requests.Session()
     resp = s.send(prepared)
     if (resp.status_code == 200):
-        log.debug("Sending annotations to MCSSR succeeded!")
+        log.debug("Sending to MCSSR succeeded!")
     else:
-        log.debug("Sending annotations to MCSSR failed!")
+        log.debug("Sending to MCSSR failed!")
     log.debug(resp.text)
 
 
