@@ -216,7 +216,7 @@ def object_detection2(self, video_path, framerate):
 
             # Keep annotation results
             for i in range(len(scores[0])):
-                if(scores[0][i] > 0.49):
+                if(scores[0][i] >= 0.56):
                     data = dict()
                     xmin = boxes[0][i].item(1) * width
                     ymin = boxes[0][i].item(0) * height
@@ -374,7 +374,8 @@ def returnvalues(self, annotations_list, video_path=None):
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     _fourcc = 875967048 #cv2.cv.CV_FOURCC(*'MP4V')
-    out = cv2.VideoWriter(annotfilepath, _fourcc, fps, (640, 480))
+    #out = cv2.VideoWriter(annotfilepath, _fourcc, fps, (640, 480))
+    out = cv2.VideoWriter(annotfilepath, _fourcc, fps, (1920, 1080))
 
     #log.debug(json)
     while(cap.isOpened()):
@@ -401,16 +402,17 @@ def returnvalues(self, annotations_list, video_path=None):
                         facename_prob = _class + '-' + prob + '%'
                         # Draw rectangle around the face
                         cv2.rectangle(frame, (x, y), (x+w, y+h),
-                                      (0, 0, 255), 4)
-                        size = cv2.getTextSize(facename_prob, cv2.FONT_HERSHEY_PLAIN, 1.0, 1)[0]
+                                      (0, 0, 255), 8)
+                        size = cv2.getTextSize(facename_prob, cv2.FONT_HERSHEY_PLAIN, 2.0, 1)[0]
                         cv2.rectangle(frame, (x, y-size[1]-3),
                                       (x+size[0]+4, y+3), (0, 0, 255), -1)
                         cv2.putText(frame, facename_prob, (x, y-2),
-                        cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1)
+                        cv2.FONT_HERSHEY_PLAIN, 2.0, (255, 255, 255), 1)
 
             # Write frame to video file
             try:
-                out.write(cv2.resize(frame, (640, 480)))
+                #out.write(cv2.resize(frame, (640, 480)))
+                out.write(cv2.resize(frame, (1920, 1080)))
             except Exception as e:
                 log.error("Cannot write new frame to video")
                 log.error(str(e))

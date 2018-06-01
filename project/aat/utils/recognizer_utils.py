@@ -131,7 +131,7 @@ def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=Non
                 log.debug("{} is Recognized with confidence  {}"
                            .format(labelsDict[nbr_pred], conf))
                 if (
-                    (recogntype == 'LBPH' and conf <= 144.5) or
+                    (recogntype == 'LBPH' and conf <= 45.0) or
                     (recogntype == 'FF' and conf <= 420) or
                     (recogntype == 'EF' and conf <= 2100)
                    ):
