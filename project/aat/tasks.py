@@ -145,11 +145,14 @@ def object_detection2(self, video_path, framerate):
         return {'od_error': 'Cannot open video'}
 
     # List of the strings that is used to add correct label for each box.
-    PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
-    # PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', ' oid_bbox_trainable_label_map.pbtxt')
+    if True:
+        label_map = 'mscoco_label_map.pbtxt'
+        NUM_CLASSES = 90
+    else:
+        label_map = 'oid_bbox_trainable_label_map.pbtxt'
+        NUM_CLASSES = 545
+    PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', label_map)
 
-    NUM_CLASSES = 90
-    # NUM_CLASSES = 545
 
     # Loading label map
     label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
