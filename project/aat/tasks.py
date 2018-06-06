@@ -223,8 +223,8 @@ def object_detection2(self, video_path, framerate):
                     ymin = boxes[0][i].item(0) * height
                     rec_width = boxes[0][i].item(3) * width - xmin
                     rec_height = boxes[0][i].item(2) * height - ymin
-                    data['position'] = {'xaxis': xmin, 'yaxis': ymin}
-                    data['dimensions'] = {'width': rec_width, 'height': rec_height}
+                    data['position'] = {'xaxis': str(xmin), 'yaxis': str(ymin)}
+                    data['dimensions'] = {'width': str(rec_width), 'height': str(rec_height)}
                     data['class'] = category_index[int(classes[0][i])]['name']
                     data['probability'] = str(scores[0][i])
                     data['frame'] = str(cap.get(1))
@@ -274,34 +274,36 @@ def senddata(self, annotations, id=None, manual_tags=None):
     json['properties'] = {}
     json['properties']['ann:Annotation'] = {}
 
-
     if (not isinstance(annotations, list)):
         _annotations = [ annotations ]
     else:
         _annotations = annotations
 
+    json['properties']['ann:Annotation']['aatLastUpdate'] = int(time.time())
     flatten = lambda l: [item for sublist in l for item in sublist]
     if ('error' in [x[3:] for x in flatten([a.keys() for a in _annotations])]):
         log.debug("Error to MCSSR!")
         json['properties']['ann:Annotation']['annotationStatus'] = 'FAILURE'
+        json['properties']['ann:Annotation']['aatMessage'] = 'FAILURE'
     else:
         log.debug("Annotations to MCSSR!")
         json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
+        json['properties']['ann:Annotation']['aatMessage'] = 'Successfuly performed annotation'
 
         if isinstance(annotations, dict):
             for k,v in annotations.iteritems():
                 if k == 'transcription':
                     v = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/static/' + v
-                json['properties']['ann:Annotation'][k] = v 
+                json['properties']['ann:Annotation'][k] = v
         else:
             for a in annotations:
                 for k,v in a.iteritems():
                     if k == 'transcription':
                         v = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/static/' + v
-                    json['properties']['ann:Annotation'][k] = v 
+                    json['properties']['ann:Annotation'][k] = v
+
         if (manual_tags and isinstance(manual_tags, dict)):
             json['properties']['ann:Annotation']['manual_tags'] = manual_tags
-
 
     log.debug("Sending data to external API")
     log.debug(json)

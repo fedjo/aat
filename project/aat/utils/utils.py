@@ -116,4 +116,4 @@ def exec_cmd(cmd):
         msg += ("\n%s" % exc.output) if exc.output else " ''"
         raise Exception(msg)
 
-    return
+    return output
