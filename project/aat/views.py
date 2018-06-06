@@ -25,6 +25,7 @@ from django.contrib.auth import logout as auth_logout
 from .models import Configuration, Cascade, RecognizerPreTrainedData
 from .forms import ComplexDetectionForm, DefaultDetectionForm
 from utils.clock_utils import Clock
+from utils.utils import exec_cmd
 from utils.recognizer_utils import train
 from aat.tasks import face_detection_recognition, transcribe, \
         object_detection2, senddata, returnvalues
@@ -118,6 +119,25 @@ def configure(request):
     resp['objdetector'] = objdetector
 
     return JsonResponse(resp)
+
+
+@csrf_exempt
+@require_http_methods(['GET'])
+def transcriptionlang(request):
+
+    cmd = ['autosub', '--list-languages']
+    try:
+        stdout = exec_cmd(cmd)
+    except Exception as e:
+        log.error(str(e))
+        return JsonResponse({'error': 'Cannot retrieve available'
+                                      ' languages at that time'})
+    if stdout:
+        langs = [ l.replace('\t', ', ') for l in stdout.split('\n')[1:]  ]
+    else:
+        langs = []
+    return JsonResponse({"languages": langs})
+
 
 @csrf_exempt
 @require_http_methods(['POST', 'GET'])
@@ -290,7 +310,7 @@ def form_detection(request):
                 if (request.POST['objdetection'] == 'true'):
                     jsondata['objdetector'] = dict()
                     jsondata['objdetector']['name'] = 'SSD_Mobilenet'
-                    jsondata['objdetector']['framerate'] = 65 
+                    jsondata['objdetector']['framerate'] = 65
                 if (request.POST['transcription'] == 'true'):
                     jsondata['transcription'] = {'input_language': 'en',
                                                  'output_language': 'en'}
@@ -463,7 +483,7 @@ def process_form(request, jsondata, callback_task):
         #    shutil.copy(result['annotvideopath'], settings.STATIC_ROOT)
         #    os.remove(result['annotvideopath'])
         # Send all information back to UI
-        
+
         context = {'form':  DefaultDetectionForm(),
                    'media': os.path.basename(result['annotvideopath']),
                    'faces': result['facedetection'] if 'facedetection' in result.keys() else {},
@@ -476,10 +496,10 @@ def process_form(request, jsondata, callback_task):
 def retrieve_fromurl(url):
     if ('http' in url):
         try:
-            import requests 
+            import requests
             videopath = os.path.join(settings.S3_ROOT, 'AAT_downloads', url[url.rfind("/")+1:])
             auth_header = {'Authorization': 'Basic QWRtaW5pc3RyYXRvcjpBZG1pbmlzdHJhdG9y'}
-            req = requests.get(url, headers=auth_header, stream=True) 
+            req = requests.get(url, headers=auth_header, stream=True)
             with open(videopath, 'wb') as v:
                 for chunk in req.iter_content(chunk_size=1024):
                     if chunk:
