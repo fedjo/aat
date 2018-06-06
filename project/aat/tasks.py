@@ -216,7 +216,8 @@ def object_detection2(self, video_path, framerate):
 
             # Keep annotation results
             for i in range(len(scores[0])):
-                if(scores[0][i] >= 0.56):
+                # 0,56 score threshold
+                if(scores[0][i] >= 0.70):
                     data = dict()
                     xmin = boxes[0][i].item(1) * width
                     ymin = boxes[0][i].item(0) * height
@@ -245,8 +246,8 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
     log.debug("Start transcribing video")
     import ntpath
 
-    srtpath = os.path.join(settings.STATIC_ROOT,
-                           ntpath.basename(video_path).split('.')[0] + '.srt')
+    name = ntpath.basename(video_path).split('.')[0].replace("%20", "+") + '.srt'
+    srtpath = os.path.join(settings.STATIC_ROOT, name)
     cmd = ['autosub', '-S', inlang, '-D', outlang, '-C 4',
            '-o', srtpath, video_path]
     try:
@@ -254,6 +255,7 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
         log.debug("Created SRT path: {}".format(srtpath))
     except Exception as e:
         log.error(str(e))
+        return {}
         return {'tr_error': str(e)}
 
     # shutil.rmtree(frames_temp_path)
@@ -286,7 +288,17 @@ def senddata(self, annotations, id=None, manual_tags=None):
         log.debug("Annotations to MCSSR!")
         json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
 
-        [json['properties']['ann:Annotation'].update(i) for i in annotations]
+        if isinstance(annotations, dict):
+            for k,v in annotations.iteritems():
+                if k == 'transcription':
+                    v = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/static/' + v
+                json['properties']['ann:Annotation'][k] = v 
+        else:
+            for a in annotations:
+                for k,v in a.iteritems():
+                    if k == 'transcription':
+                        v = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/static/' + v
+                    json['properties']['ann:Annotation'][k] = v 
         if (manual_tags and isinstance(manual_tags, dict)):
             json['properties']['ann:Annotation']['manual_tags'] = manual_tags
 
@@ -295,7 +307,6 @@ def senddata(self, annotations, id=None, manual_tags=None):
     log.debug(json)
 
     host = settings.EXT_SERVICE + id
-    host = settings.EXT_SERVICE
     headers = {'Content-type': 'application/json',
                'Authorization': 'Basic ' + settings.EXT_BASIC_AUTH}
 
