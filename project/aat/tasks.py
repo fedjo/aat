@@ -249,8 +249,12 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
     log.debug("Start transcribing video")
     import ntpath
 
+    srtdir = os.path.join(settings.STATIC_ROOT, 'srt')
+    if not os.path.exists(srtdir):
+        os.makedirs(srtdir)
+
     name = ntpath.basename(video_path).split('.')[0].replace("%20", "+") + '.srt'
-    srtpath = os.path.join(settings.STATIC_ROOT, name)
+    srtpath = os.path.join(srtdir, name)
     cmd = ['autosub', '-S', inlang, '-D', outlang, '-C 4',
            '-o', srtpath, video_path]
     try:
@@ -258,15 +262,16 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
         log.debug("Created SRT path: {}".format(srtpath))
     except Exception as e:
         log.error(str(e))
-        return {}
-        return {'tr_error': str(e)}
+        #return {}
+        return {'tr_error': 'The audio stream is not valid'}
 
     # shutil.rmtree(frames_temp_path)
     # cmd = ['ffmpeg', '-i', video_path, '-i', srt_path,
            #'-c', 'copy', '-c:s', 'mov_text', video_path]
     # stdout = exec_cmd(cmd)
 
-    return {'transcription': ntpath.basename(srtpath)}
+    return {'transcription':
+            instanceurl + os.path.join(settings.STATIC_URL, 'srt', ntpath.basename(srtpath))}
 
 
 @shared_task(bind=True)
@@ -278,35 +283,27 @@ def senddata(self, annotations, id=None, manual_tags=None):
     json['properties']['ann:Annotation'] = {}
 
     if (not isinstance(annotations, list)):
-        _annotations = [ annotations ]
-    else:
         _annotations = annotations
+    else:
+        _annotations = {}
+        for d in annotations:
+            _annotations.update(d)
 
     json['properties']['ann:Annotation']['aatLastUpdate'] = int(time.time())
-    flatten = lambda l: [item for sublist in l for item in sublist]
-    if ('error' in [x[3:] for x in flatten([a.keys() for a in _annotations])]):
+    errkey = lambda l: reduce((lambda x,y: x if x[3:]=='error' else y), l) \
+                if 'error' in map((lambda x: x[3:]), l) else ""
+    ek = errkey(_annotations.keys())
+    if ek:
         log.debug("Error to MCSSR!")
         json['properties']['ann:Annotation']['annotationStatus'] = 'FAILURE'
-        json['properties']['ann:Annotation']['aatMessage'] = 'FAILURE'
+        json['properties']['ann:Annotation']['aatMessage'] = _annotations[ek]
     else:
         log.debug("Annotations to MCSSR!")
         json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
         json['properties']['ann:Annotation']['aatMessage'] = 'Successfuly performed annotation'
-
-        if isinstance(annotations, dict):
-            for k,v in annotations.iteritems():
-                if k == 'transcription':
-                    v = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/static/' + v
-                json['properties']['ann:Annotation'][k] = v
-        else:
-            for a in annotations:
-                for k,v in a.iteritems():
-                    if k == 'transcription':
-                        v = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/static/' + v
-                    json['properties']['ann:Annotation'][k] = v
-
         if (manual_tags and isinstance(manual_tags, dict)):
-            json['properties']['ann:Annotation']['manual_tags'] = manual_tags
+            _annotations['manual_tags'] = manual_tags
+        json['properties']['ann:Annotation'].update(_annotations)
 
     log.debug("Sending data to external API")
     log.debug(json)
