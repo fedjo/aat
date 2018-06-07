@@ -34,8 +34,10 @@ from aat.tasks import face_detection_recognition, transcribe, \
 log = logging.getLogger(__name__)
 
 
+@login_required
 def index(request):
-    return render(request, 'aat/index.html')
+    annotvideos = os.listdir(os.path.join(settings.S3_ROOT, 'Annotated_Videos'))
+    return render(request, 'aat/index.html', {'videos': annotvideos})
 
 
 @login_required
@@ -382,7 +384,7 @@ def process_form(request, jsondata, callback_task):
         objects = dict()
         static_srt = ''
 
-        bounboxes = True
+        boundboxes = True
         if ('bounding_boxes' in jsondata.keys()):
             boundboxes = jsondata['bounding_boxes']
 
