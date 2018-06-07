@@ -133,7 +133,7 @@ def transcriptionlang(request):
         return JsonResponse({'error': 'Cannot retrieve available'
                                       ' languages at that time'})
     if stdout:
-        langs = [ l.replace('\t', ', ') for l in stdout.split('\n')[1:]  ]
+        langs = [ l.replace('\t', ', ') for l in stdout.split('\n')[3:]  ]
     else:
         langs = []
     return JsonResponse({"languages": langs})

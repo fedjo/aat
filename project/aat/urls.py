@@ -14,6 +14,7 @@ urlpatterns = [
         url(r'^configure/default', views.configure, name='configure_def'),
         url(r'^configure', views.configure, name='configure'),
         url(r'^model', views.model, name='model'),
+        url(r'^transcriptionlang', views.transcriptionlang, name='transcriptionlang'),
         url(r'^about', views.about, name='about'),
         url(r'^logout', views.logout, name='logout'),
         url(r'^', include('django.contrib.auth.urls', namespace='auth')),
