@@ -1,3 +1,6 @@
+DEVELOPEMENT
+------------
+
 - [x] Fork only opencv or opencv_contrib to make the changes the other repo fetch the upstream
 
 - [x] Containerized builds. Build one container which builds and installs Opecv with Python bindings. The build another container inheriting the first and installing the app. So the firsta container will not change all the time.
@@ -25,6 +28,14 @@
         - [x] Better error messages if provided json is invalid!
     - [ ] Train cascade + List Cascades
         - [ ] Give the oppurtunity to train a haar cascade to recognize specific objects
+- [x] Update LBPH recognizer trained data, instead of retrain
+- [x] Integrate with MCSSR
+    - [x] Send back error messages
+- [x] Fix SSO configuration
+- [x] Add API tests on Jenkins
+- [x] Train object recognizer with a bigger database [2]
+- [ ] Add Amazon S3 support
+- [ ] Process videos as bunch of frames in parallel
 - [x] Automatically select every how many frames will run the annotation process
     - [x] Give option to user to detect/recognize every X frames
 - [x] Automatic subtitling (create subs with autosub tool, merge subtitles with ffmpeg)
@@ -33,17 +44,22 @@
 - [x] Create aggregated results either to DB or to another ext service after the finish of tasks
 - [x] Create a two separate tasks Face detection/recognition + Object detection \
         \ that can run autonomous and in parallel. They should have a parameter to read every X frames
-- [ ] Process videos as bunch of frames in parallel
-- [ ] Normalize face detection results
-- [ ] Normalize face recognition results
+- [x] Normalize face detection results
+- [x] Normalize face recognition results
 - [x] Check whether the CNN for object detection can recognize animals
         -> Can recognize dog, cat, bird, horse, sheep, cow, elephant,
             bear, zebra, giraffe
 
 
+EVALUATION
+----------
+- [ ] Benchmarks
+- [x] Screencast of usage
 
----- Not priority ----
 
+
+IMPROVEMENTS
+------------
 - [ ] Try to solve issues with py-faster rcnn
 - [ ] Embedd py-faster rcnn to the application
 - [ ] Gender classification
@@ -53,3 +69,4 @@
 
 [0] https://philsturgeon.uk/api/2016/01/04/http-rest-api-file-uploads/
 [1] http://docs.celeryproject.org/en/latest/userguide/workers.html#time-limits
+[2] https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md

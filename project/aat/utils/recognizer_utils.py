@@ -81,6 +81,11 @@ def train(recogntype, facesdbname, facesdbpath, size):
             tmp += "{}, ".format(person)
         prtrdata.faces = tmp[:-2]
 
+        # Delete previous entry of MyFaces.yml
+        qs = RecognizerPreTrainedData.objects.filter(name='MyFaces.yml')
+        if (qs.count() > 0):
+            qs.delete()
+
         prtrdata.save()
 
     except Exception as e:

@@ -176,7 +176,8 @@ def model(request):
             size[0] = request.POST['sizex']
             size[1] = request.POST['sizey']
 
-        for type in ['LBPH', 'EF', 'FF']:
+        # for type in ['LBPH', 'EF', 'FF']:
+        for type in ['LBPH']:
             try:
                 train(type, uploadedzip.name, extractdir, size)
             except Exception as e:
@@ -186,7 +187,8 @@ def model(request):
         # Return faces that recognizer was trained with
         ptrdataqs = RecognizerPreTrainedData.objects.all()
         for o in ptrdataqs:
-            if uploadedzip.name.replace('.zip', '') in o.name:
+            # if uploadedzip.name.replace('.zip', '') in o.name:
+            if "MyFaces.yml" == o.name:
                 people = (o.faces).split(', ')
 
         resp = dict()
