@@ -1,0 +1,176 @@
+{
+	"info": {
+		"_postman_id": "a0b246f2-75bd-4b9d-9dec-8c41eccbe97f",
+		"name": "Jenkins Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "POST /model",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "d6e88bf6-8398-4a0d-8e5a-46de3ef71e56",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var schema = {",
+							"  \"properties\": {",
+							"    \"people\": {",
+							"        \"type\": \"array\"",
+							"    }",
+							"  }",
+							"};",
+							"",
+							"var data1 = [true, false];",
+							"var data2 = [true, 123];",
+							"",
+							"pm.test('Schema is valid', function() {",
+							"  pm.expect(tv4.validate(data1, schema)).to.be.true;",
+							"  pm.expect(tv4.validate(data2, schema)).to.be.true;",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "model",
+							"value": "",
+							"description": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": "http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/model"
+			},
+			"response": []
+		},
+		{
+			"name": "GET /model",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8e8f2103-b935-492d-bb76-ea28b21f831d",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"",
+							"var schema = {",
+							"    \"type\": \"array\"",
+							"}",
+							"",
+							"var data1 = [true, false];",
+							"var data2 = [true, 123];",
+							"",
+							"pm.test('Schema is valid', function() {",
+							"  pm.expect(tv4.validate(data1, schema)).to.be.true;",
+							"  pm.expect(tv4.validate(data2, schema)).to.be.true;",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "model",
+							"value": "",
+							"description": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": "http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/model"
+			},
+			"response": []
+		},
+		{
+			"name": "GET /configure",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "af14ddd4-dec1-4aa3-9953-d453e80c5580",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "model",
+							"value": "",
+							"description": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": "http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/configure"
+			},
+			"response": []
+		},
+		{
+			"name": "POST /annotate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "af14ddd4-dec1-4aa3-9953-d453e80c5580",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"content\": \n\t{ \"path\": \" http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8080/nuxeo/nxfile/default/32b14b1e-79d8-42ad-b642-096320176321/file:content/3092\", \n\t  \"uid\": \"32b14b1e-79d8-42ad-b642-096320176321\"\n\t} \n\t\n}"
+				},
+				"url": "http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8000/annotate"
+			},
+			"response": []
+		}
+	]
+}
