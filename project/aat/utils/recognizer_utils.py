@@ -61,8 +61,10 @@ def train(recogntype, facesdbname, facesdbpath, size):
             recognizer.train(npfaces, numpy.array(labels))
         else:
             log.debug("Updating the trained file: {}".format(pretrained_filepath))
-            recognizer.read(pretrained_filepath)
-            recognizer.update(npfaces, numpy.array(labels))
+            os.remove(pretrained_filepath)
+            recognizer.train(npfaces, numpy.array(labels))
+            #recognizer.read(pretrained_filepath)
+            #recognizer.update(npfaces, numpy.array(labels))
         recognizer.write(pretrained_filepath)
         # Save the YAML pretrained file to db
         prtrdata = RecognizerPreTrainedData()
@@ -136,10 +138,13 @@ def predictFaces(recognizer, recid, gray_img, (x, y, w, h), labelsDict, size=Non
                 log.debug("{} is Recognized with confidence  {}"
                            .format(labelsDict[nbr_pred], conf))
                 if (
-                    (recogntype == 'LBPH' and conf <= 45.0) or
+                    #(recogntype == 'LBPH' and conf <= 35.0) or
+                    (recogntype == 'LBPH') or
                     (recogntype == 'FF' and conf <= 420) or
                     (recogntype == 'EF' and conf <= 2100)
                    ):
+                    log.debug("{} is strongly Recognized with confidence  {}"
+                              .format(labelsDict[nbr_pred], conf))
                     return (labelsDict[nbr_pred], conf)
                 else:
                     return ('', 0.0)

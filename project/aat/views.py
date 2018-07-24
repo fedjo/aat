@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 @login_required
 def index(request):
-    annotvideos = os.listdir(os.path.join(settings.S3_ROOT, 'Annotated_Videos'))
+    annotvideos = os.listdir(os.path.join(settings.S3_ROOT, 'Annotated_Videos', 'benchmarks'))
     return render(request, 'aat/index.html', {'videos': annotvideos})
 
 
@@ -257,9 +257,13 @@ def annotate(request):
         }
         validate(jsondata, schema)
     except ValueError as error:
-        return JsonResponse({'error': 'Bad JSON structure. ' + str(error)})
+        log.debug(str(error))
+        log.debug(jsondata)
+        return JsonREsponse({'error': 'Bad JSON structure. ' + str(error)}, status=400)
     except Exception as e:
-        return JsonResponse({'error': 'Input JSON is not appropriate'})
+        log.debug(str(e))
+        log.debug(jsondata)
+        return JsonResponse({'error': 'Input JSON is not appropriate'}, status=400)
 
     if ('manual_tags' in jsondata.keys()):
         callback = senddata.s(id=jsondata['content']['uid'], manual_tags=jsondata['manual_tags'])

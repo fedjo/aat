@@ -88,33 +88,36 @@ def face_detection_recognition(self, video_path, recid, haarcascades, scale,
                 allface_positions += [ { 'position': {'xaxis': str(a[0]), 'yaxis': str(a[1])},
                                          'dimensions': {'width': str(a[2]), 'height': str(a[3])},
                                          'frame': str(cap.get(1)),
-                                         'timecode': "{0:.2f}".format(cap.get(1)/fps) } for a in current_faces ]
+                                         'timecode': "{0:.2f}".format(cap.get(1)/fps),
+                                         'face': 'unknown face',
+                                         'probability': '0' } for a in current_faces ]
                 continue
 
             # Get copy of the current colored frame and
             # draw all the rectangles of possible faces on the frame
             # along with the name recognized
             for (x, y, w, h) in current_faces:
-                facename_prob = 'person - NaN'
 
                 value = dict()
                 value['frame'] = str(cap.get(1))
                 value['timecode'] = "{0:.2f}".format(cap.get(1)/fps)
+                value['face'] = 'unknown face' 
+                value['probability'] = '0'
 
                 if recid:
                     # Predict possible faces on the original frame
                     (facename, prob) = recognizer.predictFaces(myrecognizer, recid, gray,
                                                     (x, y, w, h), face_labelsDict)
-                    if not facename:
-                        facename_prob = 'person - NaN'
-                    else:
-                        value['face'] = facename
-                        value['probability'] = "{0:.2f}".format(prob)
+                    if facename:
+                        if (prob <= 39.0):
+                            value['face'] = facename
+                            value['probability'] = "{0:.2f}".format(prob)
+                        else:
+                            pass
 
                 if has_bounding_boxes:
                     value['position'] = {'xaxis': str(x), 'yaxis': str(y)}
                     value['dimensions'] = {'width': str(w), 'height': str(h)}
-
 
                 allface_positions.append(value)
 
@@ -220,7 +223,7 @@ def object_detection2(self, video_path, framerate):
             # Keep annotation results
             for i in range(len(scores[0])):
                 # 0,56 score threshold
-                if(scores[0][i] >= 0.70):
+                if(scores[0][i] >= 0.78):
                     data = dict()
                     xmin = boxes[0][i].item(1) * width
                     ymin = boxes[0][i].item(0) * height
@@ -270,8 +273,8 @@ def transcribe(self, video_path, inlang, outlang, instanceurl):
            #'-c', 'copy', '-c:s', 'mov_text', video_path]
     # stdout = exec_cmd(cmd)
 
-    return {'transcription':
-            instanceurl + os.path.join(settings.STATIC_URL, 'srt', ntpath.basename(srtpath))}
+    return {'transcription': { 'url': 
+            'http://' + instanceurl + os.path.join(settings.STATIC_URL, 'srt', ntpath.basename(srtpath))}}
 
 
 @shared_task(bind=True)
@@ -289,7 +292,7 @@ def senddata(self, annotations, id=None, manual_tags=None):
         for d in annotations:
             _annotations.update(d)
 
-    json['properties']['ann:Annotation']['aatLastUpdate'] = int(time.time())
+    json['properties']['ann:Annotation']['aatLastUpdate'] = int(time.time())*1000
     errkey = lambda l: reduce((lambda x,y: x if x[3:]=='error' else y), l) \
                 if 'error' in map((lambda x: x[3:]), l) else ""
     ek = errkey(_annotations.keys())
@@ -302,7 +305,13 @@ def senddata(self, annotations, id=None, manual_tags=None):
         json['properties']['ann:Annotation']['annotationStatus'] = 'ANNOTATED'
         json['properties']['ann:Annotation']['aatMessage'] = 'Successfuly performed annotation'
         if (manual_tags and isinstance(manual_tags, dict)):
-            _annotations['manual_tags'] = manual_tags
+            manual_tags['timecode'] = '0'
+            if ('objectdetection' in _annotations):
+                _annotations['objectdetection'].append(manual_tags)
+            else:
+                _annotations['objectdetection'] = []
+                _annotations['objectdetection'].append(manual_tags)
+
         json['properties']['ann:Annotation'].update(_annotations)
 
     log.debug("Sending data to external API")
