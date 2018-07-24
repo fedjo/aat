@@ -1,7 +1,8 @@
 import requests
 import logging
+import json
 
-from django.shortcuts import redirect 
+from django.shortcuts import redirect
 from social_core.utils import handle_http_errors
 from social_core.exceptions import AuthFailed
 from social_core.backends.oauth import BaseOAuth2
@@ -32,6 +33,13 @@ class Auth0(BaseOAuth2):
                 method=self.ACCESS_TOKEN_METHOD
             )
             self.process_error(response)
+
+            details = self.get_user_details(response)
+            user_dict = json.loads(details["user"])
+            user_type = user_dict["userType"]
+            if user_type != 'Producer':
+                data = {"error":"denied"}
+                raise AuthFailed(self, data)
         except AuthFailed:
             return redirect('http://producer-toolkit.eu/#/login')
         return self.do_auth(response['access_token'], response=response,
@@ -78,5 +86,6 @@ class Auth0(BaseOAuth2):
         return {'username': userinfo['nickname'],
                 'first_name': userinfo['name'],
                 'picture': userinfo['picture'],
-                'user_id': userinfo['sub']}
+                'user_id': userinfo['sub'],
+                'user': userinfo['https://producer.eu/user_metadata']['user']}
 
