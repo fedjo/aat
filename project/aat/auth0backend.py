@@ -1,8 +1,10 @@
+import os
 import requests
 import logging
 import json
 
 from django.shortcuts import redirect
+
 from social_core.utils import handle_http_errors
 from social_core.exceptions import AuthFailed
 from social_core.backends.oauth import BaseOAuth2
@@ -41,7 +43,10 @@ class Auth0(BaseOAuth2):
                 data = {"error":"denied"}
                 raise AuthFailed(self, data)
         except AuthFailed:
-            return redirect('http://producer-toolkit.eu/#/login')
+            if (os.getenv('AUTH0_REDIRECT_URL'))
+                return redirect('http://producer-toolkit.eu/#/login')
+            else:
+                return
         return self.do_auth(response['access_token'], response=response,
                             *args, **kwargs)
 

@@ -18,6 +18,7 @@ services:
       - cache:/data/cache:rw
       - static:/facerec/project/static:rw
       - ./requirements.txt:/facerec/requirements.txt
+      - /home/lebowski/Downloads/:/data/s3:rw
   celery:
     extends: init
     command: facerec-ctl celery
@@ -28,6 +29,7 @@ services:
       - AUTH0_DOMAIN=
       - AUTH0_KEY=
       - AUTH0_SECRET=
+      - AUTH0_REDIRECT_URL=''
     command: facerec-ctl uwsgi
     expose:
       - 8000
