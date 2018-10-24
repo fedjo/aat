@@ -187,6 +187,14 @@ CELERY_SETTINGS = {
     #'CELERY_ALWAYS_EAGER': True,
 }
 
+
+# AWS S3 credentials
+AWS_ACCESS_KEY_ID =
+AWS_SECRET_ACCESS_KEY =
+AWS_BUCKET_NAME =
+
+
+# Django Social tool to perform SSO
 SOCIAL_AUTH_TRAILING_SLASH = False
 
 SOCIAL_AUTH_AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
@@ -203,8 +211,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = False
 
 # Service where Automatic Annotation Tools sends the generated data
-#EXT_SERVICE = 'http://83.212.102.18:8001'
-EXT_SERVICE = 'http://ec2-34-248-183-236.eu-west-1.compute.amazonaws.com:8080/nuxeo/api/v1/id/'
+EXT_SERVICE = 'http://83.212.102.18:8001/'
 import base64
 EXT_BASIC_AUTH = base64.b64encode('USERNAME:PASSWORD')
 
