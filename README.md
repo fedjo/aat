@@ -1,3 +1,59 @@
+# Project Title
+
+A web application to extract face and object annotations from videos using 
+computer vision algorithms for face/object detection/recognition
+
+### Prerequisites
+
+On a GNU/Linux Debian Stretch machine install
+
+* python 2.7
+* docker
+* docker-compose
+
+### Installing
+
+Clone git repository on your machine.
+On a console run:
+
+```
+git clone https://github.com/fedjo/orca.git
+```
+
+Move into directory 'aat' and build
+docker images
+
+```
+cd aat
+./docker/build.sh dev
+```
+Then run containers using docker-compose
+
+```
+docker-compose up -d
+```
+
+## Running the tests
+
+
+## Built With
+
+* [Python 2.7](https://www.python.org/download/releases/2.7/) - The language used
+* [Django 1.10](https://www.djangoproject.com/) - Python Web framework
+
+## Contributing
+
+Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/fedjo/aat/tags).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+
 **Upload a face database**
 ----
   Upload a zip file containing the faces you want to find on videos.
